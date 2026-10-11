@@ -1,0 +1,59 @@
+.al-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.export-log-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+
+.export-log-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.al-list-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 8px 20px;
+}
+
+.al-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.al-text {
+  flex: 1;
+  font-size: 13px;
+  color: #374151;
+}
+
+.al-time {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.al-empty {
+  padding: 30px 0;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}

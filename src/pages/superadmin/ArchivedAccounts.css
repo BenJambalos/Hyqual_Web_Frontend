@@ -1,0 +1,92 @@
+.aa-toolbar {
+  margin-bottom: 20px;
+}
+
+.aa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.aa-empty {
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.aa-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.aa-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.aa-card-top h3 {
+  font-size: 15px;
+  color: #111827;
+}
+
+.aa-farm-name {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.aa-meta-row {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.aa-meta-row span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.aa-card-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.aa-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aa-restore-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}

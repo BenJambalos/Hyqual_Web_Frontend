@@ -1,0 +1,48 @@
+.confirm-modal-content {
+  padding: 24px;
+  width: 340px;
+  max-width: 100%;
+}
+
+.confirm-modal-content h3 {
+  font-size: 16px;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.confirm-modal-content p {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-cancel-btn {
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.confirm-ok-btn {
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirm-ok-danger {
+  background: #dc2626;
+}

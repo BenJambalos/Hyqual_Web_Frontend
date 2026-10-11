@@ -1,0 +1,166 @@
+.mfm-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-pill {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.filter-pill-active {
+  background: #0d5c46;
+  color: white;
+  border-color: #0d5c46;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 14px;
+  min-width: 240px;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #111827;
+  width: 100%;
+}
+
+.search-box svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.farm-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.farm-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.farm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.farm-card-header h3 {
+  font-size: 14px;
+  color: #111827;
+}
+
+.farm-owner {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-pill-normal { background: #e6f6ee; color: #1f9d6e; }
+.status-pill-critical { background: #fee2e2; color: #dc2626; }
+.status-pill-moderate { background: #fef3c7; color: #d97706; }
+.status-pill-offline { background: #f3f4f6; color: #6b7280; }
+
+.farm-meta {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.farm-readings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.farm-card {
+  cursor: pointer;
+}
+
+.open-farm-link {
+  color: #0d5c46;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reading-box {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+}
+
+.reading-abnormal-critical {
+  background: #fde2e2;
+}
+
+.reading-abnormal-moderate {
+  background: #fef3c7;
+}
+
+.reading-label {
+  display: block;
+  font-size: 10px;
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.reading-value {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.farm-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.updated-text {
+  color: #9ca3af;
+}
+
+.farm-card-footer a {
+  color: #0d5c46;
+  text-decoration: none;
+  font-weight: 600;
+}

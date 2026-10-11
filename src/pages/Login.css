@@ -1,0 +1,170 @@
+.login-page {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.login-card {
+  width: 420px;
+  max-width: 90vw;
+  padding: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.login-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.login-success {
+  color: #166534;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logo-text-img {
+  height: 20px;
+  width: auto;
+  object-fit: contain;
+}
+
+.login-card h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #111827;
+}
+
+.subtext {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+form input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+  font-size: 14px;
+  color: #111827;
+}
+
+form input::placeholder {
+  color: #9ca3af;
+}
+
+form input:focus {
+  outline: none;
+  border-color: #1f9d6e;
+}
+
+form > label:first-of-type,
+form > input:first-of-type {
+  margin-bottom: 20px;
+}
+
+.password-field {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.password-field input {
+  padding-right: 42px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.sign-in-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.sign-in-btn:hover {
+  opacity: 0.92;
+}
+
+.forgot-password {
+  display: block;
+  width: 100%;
+  text-align: right;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #6b7280;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.back-to-login {
+  text-align: left;
+  margin-top: 18px;
+}
+
+.reset-btn {
+  margin-top: 8px;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

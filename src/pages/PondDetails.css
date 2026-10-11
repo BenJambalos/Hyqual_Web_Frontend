@@ -1,0 +1,263 @@
+.pd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.pd-water-quality-heading {
+  font-size: 15px;
+  color: #111827;
+  margin: 20px 0 2px 0;
+}
+
+.pd-water-quality-subtext {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.pd-readings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.pd-reading-card {
+  border-radius: 14px;
+  padding: 16px;
+  border: 1.5px solid;
+  background: white;
+}
+
+.pd-reading-card-normal { border-color: #34b878; background: #f4fbf7; }
+.pd-reading-card-moderate { border-color: #f59e0b; background: #fffaf0; }
+.pd-reading-card-critical { border-color: #dc2626; background: #fef4f4; }
+
+.pd-reading-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pd-reading-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.pd-reading-card h2 {
+  font-size: 24px;
+  color: #111827;
+}
+
+.pd-reading-unit {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+.pd-reading-bar-track {
+  width: 100%;
+  height: 5px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.pd-reading-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.pd-reading-bar-normal { background: #1f9d6e; }
+.pd-reading-bar-moderate { background: #f59e0b; }
+.pd-reading-bar-critical { background: #dc2626; }
+
+.pd-reading-safe {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* RIGHT PANEL */
+.pd-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pd-tab-btn {
+  flex: 1;
+  background: #f3f4f6;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.pd-tab-btn-active {
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+}
+
+.pd-panel {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.pd-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.pd-panel-header h3 {
+  font-size: 15px;
+  color: #111827;
+}
+
+.pd-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pd-log-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.pd-log-table {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.pd-log-header-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.pd-log-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr;
+  padding: 10px 0;
+  border-bottom: 1px solid #f9fafb;
+  font-size: 13px;
+  color: #374151;
+}
+
+.pd-log-empty {
+  padding: 20px 0;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* REPORTS TAB */
+.pd-report-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.pd-report-info {
+  flex: 1;
+}
+
+.pd-report-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.pd-report-range {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.pd-report-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ALERTS TAB */
+.pd-alert-day-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 10px;
+}
+
+.pd-alert-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.pd-alert-body {
+  flex: 1;
+}
+
+.pd-alert-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.pd-alert-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.pd-alert-status-text {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pd-alert-pond {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.pd-alert-message {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.pd-alert-time {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+.live-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+  margin-left: 10px;
+  vertical-align: middle;
+}

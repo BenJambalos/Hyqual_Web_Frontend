@@ -1,0 +1,155 @@
+.dr-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.dr-search {
+  min-width: 260px;
+}
+
+.dr-table-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 8px 20px;
+}
+
+.dr-table-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr 1.5fr 1fr 1fr .8fr 1.6fr .8fr;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.03em;
+}
+
+.dr-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr 1.5fr 1fr 1fr .8fr 1.6fr .8fr;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+  color: #111827;
+}
+
+.dr-device-id {
+  font-weight: 600;
+}
+
+.dr-muted {
+  color: #6b7280;
+}
+
+.dr-sensor-health {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dr-sensor-dot {
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 5px;
+}
+
+.dr-sensor-online {
+  background: #e6f6ee;
+  color: #1f9d6e;
+}
+
+.dr-sensor-offline {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.device-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.device-status-online {
+  background: #e6f6ee;
+  color: #1f9d6e;
+}
+
+.device-status-offline {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.device-status-unassigned {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.dr-empty {
+  padding: 30px 0;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.dr-loading {
+  padding: 30px 0;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.dr-provision-btn,
+.dr-credential-notice button {
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #e6f6ee;
+  color: #147a52;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dr-credential-notice {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px 0;
+  color: #92400e;
+}
+
+.dr-credential-notice p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-weight: 600;
+}
+
+.dr-credential-notice label {
+  display: grid;
+  gap: 6px;
+  color: #374151;
+  font-size: 12px;
+}
+
+.dr-credential-notice input {
+  width: min(640px, 70vw);
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.dr-credential-error {
+  color: #b91c1c;
+}

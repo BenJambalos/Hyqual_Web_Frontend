@@ -1,0 +1,137 @@
+.flm-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  height: calc(100vh - 130px);
+}
+
+.flm-map-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.flm-map-viewport {
+  position: relative;
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* SELECTED FARM POPUP */
+.selected-farm-popup {
+  position: absolute;
+  bottom: 56px;
+  left: 12px;
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  width: 240px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 3;
+}
+
+.selected-farm-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.selected-farm-popup h3 {
+  font-size: 15px;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.selected-farm-location {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+.selected-farm-popup .status-pill {
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.view-farm-btn {
+  width: 100%;
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: white;
+  border-radius: 999px;
+  padding: 4px 8px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 2;
+}
+
+/* FARM LIST PANEL */
+.farm-list-panel {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.farm-list-header {
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.farm-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 8px;
+  border-top: 1px solid #f3f4f6;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.farm-list-item:hover {
+  background: #f9fafb;
+}
+
+.farm-list-item-active {
+  background: #e6f6ee;
+}
+
+.farm-list-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.farm-list-location {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.farm-list-status {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-text-normal { color: #1f9d6e; }
+.status-text-critical { color: #dc2626; }
+.status-text-moderate { color: #d97706; }
+.status-text-offline { color: #6b7280; }

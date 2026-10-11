@@ -1,0 +1,43 @@
+.date-range-content {
+  padding: 24px;
+}
+
+.date-range-content h3 {
+  font-size: 16px;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.date-range-content label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.date-range-content input[type="date"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.apply-btn {
+  width: 100%;
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

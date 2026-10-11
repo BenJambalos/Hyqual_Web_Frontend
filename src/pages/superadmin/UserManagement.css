@@ -1,0 +1,267 @@
+.add-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.um-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.archive-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.um-filters {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+}
+
+.dropdown-wrapper {
+  position: relative;
+}
+
+.filter-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filter-dropdown-menu {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  z-index: 5;
+  min-width: 140px;
+}
+
+.filter-dropdown-menu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 12px;
+  text-align: left;
+  color: #374151;
+  cursor: pointer;
+}
+
+.filter-dropdown-menu button:hover {
+  background: #f3f4f6;
+}
+
+.um-search {
+  min-width: 220px;
+  max-width: 260px;
+}
+
+.um-table-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 8px 20px;
+}
+
+.um-table-header-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 0.6fr;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.03em;
+}
+
+.um-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 0.6fr;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+}
+
+.um-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.um-user-name {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+}
+
+.um-user-name:hover {
+  color: #0d5c46;
+}
+
+.um-user-email {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.role-pill {
+  background: #e6f6ee;
+  color: #0d5c46;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.um-farm-cell {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.status-dot-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.status-dot-text::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-dot-text-active {
+  color: #1f9d6e;
+}
+
+.status-dot-text-offline {
+  color: #6b7280;
+}
+
+.status-dot-text-offline::before {
+  background: #6b7280;
+}
+
+.status-dot-text-pending {
+  color: #d97706;
+}
+
+.status-dot-text-pending::before {
+  background: #d97706;
+}
+
+.status-dot-text-active::before {
+  background: #1f9d6e;
+}
+
+.um-last-seen {
+  color: #6b7280;
+}
+
+.um-row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.row-action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.row-action-danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.um-profile-content {
+  padding: 28px;
+}
+
+.um-profile-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 28px 20px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.um-profile-heading h2 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 18px;
+}
+
+.um-profile-details {
+  margin: 8px 0 0;
+}
+
+.um-profile-details div {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+}
+
+.um-profile-details dt {
+  color: #6b7280;
+}
+
+.um-profile-details dd {
+  margin: 0;
+  color: #111827;
+  overflow-wrap: anywhere;
+}

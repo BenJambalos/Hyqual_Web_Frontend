@@ -1,0 +1,157 @@
+.report-metrics {
+  margin: 24px 0;
+  color: #172521;
+}
+
+.report-metrics-heading,
+.report-metric-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.report-metrics-heading {
+  margin-bottom: 14px;
+}
+
+.report-metrics-eyebrow {
+  color: #16866a;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-metrics-heading h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+}
+
+.report-metrics-note,
+.report-metric-caption,
+.report-metric-footnote {
+  color: #687771;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.report-metrics-note {
+  max-width: 310px;
+  text-align: right;
+}
+
+.report-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-metric-panel {
+  min-width: 0;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #e2e9e6;
+  border-radius: 8px;
+}
+
+.report-metric-panel h3 {
+  margin: 0 0 5px;
+  color: #172521;
+  font-size: 14px;
+}
+
+.report-metric-caption {
+  margin: 0 0 12px;
+}
+
+.report-chart {
+  width: 100%;
+  height: 170px;
+  margin: 4px 0 10px;
+}
+
+.report-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.report-metric-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.report-metric-panel th,
+.report-metric-panel td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #edf1ef;
+  white-space: nowrap;
+}
+
+.report-metric-panel thead th {
+  color: #687771;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-metric-panel tbody th {
+  color: #31413b;
+  font-weight: 600;
+}
+
+.report-metric-panel tbody td {
+  color: #475750;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-metric-footnote {
+  margin: 8px 0 0;
+  font-size: 10px;
+}
+
+.report-metric-highlight {
+  background: #eef7f3;
+  border-color: #cde6da;
+}
+
+.report-metric-big {
+  margin: 18px 0 3px;
+  color: #12694f;
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-metric-score {
+  color: #12694f;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table-empty {
+  color: #687771 !important;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .report-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .report-metrics-heading {
+    flex-direction: column;
+  }
+
+  .report-metrics-note {
+    max-width: none;
+    text-align: left;
+  }
+
+  .report-metric-panel {
+    padding: 14px 10px;
+  }
+}
