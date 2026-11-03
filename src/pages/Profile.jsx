@@ -5,6 +5,12 @@ import "./Profile.css";
 import Sidebar from "../components/Sidebar";
 import SuperadminSidebar from "../components/SuperadminSidebar";
 
+function censorEmail(email = "") {
+  const [localPart, domain] = email.split("@");
+  if (!domain) return email;
+  return `${localPart.slice(0, 2)}***@${domain}`;
+}
+
 function Profile() {
   const storedUser = JSON.parse(localStorage.getItem("hyqual_user"));
   const isSuperadmin = storedUser?.role === "Superadmin";
@@ -51,13 +57,17 @@ function Profile() {
   const handleSave = async () => {
     setProfileError("");
     try {
-      const { user } = await api.updateUser(storedUser.id || storedUser.uid, form);
+      const profileUpdates = Object.fromEntries(
+        Object.entries(form).filter(([field]) => field !== "email"),
+      );
+      const response = await api.updateUser(storedUser.id || storedUser.uid, profileUpdates);
+      const user = response.user ?? response;
       localStorage.setItem("hyqual_user", JSON.stringify(user));
       setForm({
         firstName: user.firstName || "",
         middleName: user.middleName || "",
         lastName: user.lastName || "",
-        mobile: user.mobile || "",
+        mobile: user.mobile || user.phone || "",
         email: user.email || "",
         street: user.street || "",
         barangay: user.barangay || "",
@@ -215,9 +225,9 @@ function Profile() {
               <div className="profile-field">
                 <label>Email Address</label>
                 <input
-                  value={form.email}
-                  disabled={!isEditing}
-                  onChange={handleChange("email")}
+                  value={censorEmail(form.email)}
+                  readOnly
+                  aria-label="Email Address (partially hidden and read-only)"
                 />
               </div>
             </div>

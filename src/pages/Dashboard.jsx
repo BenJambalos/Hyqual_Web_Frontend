@@ -8,7 +8,12 @@ import { getOverallStatus } from "../utils/thresholds";
 import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { useCollection } from "../hooks/useCollection";
-import { buildReadingAlerts, getAlertTimestamp, normalizeStoredAlerts } from "../utils/alertHelpers";
+import {
+  buildReadingAlerts,
+  getAlertDateKey,
+  getAlertTimestamp,
+  normalizeStoredAlerts,
+} from "../utils/alertHelpers";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 import { useDeviceStatus } from "../hooks/useDeviceStatus";
 import { markAlertSeen } from "../utils/seenAlerts";
@@ -61,6 +66,7 @@ function Dashboard() {
     moderate: farmsWithStatus.filter((farm) => farm.status === "moderate").length,
   };
 
+  const now = new Date();
   const alerts = [
     ...buildReadingAlerts(liveHistory, farms),
     ...(deviceStatusReady && !deviceOnline ? [{
@@ -71,10 +77,13 @@ function Dashboard() {
       status: "offline",
       message: "Monitoring device is offline and is not sending readings.",
       displayTime: "Now",
-      createdAt: new Date().toISOString(),
+      date: getAlertDateKey(now),
+      daysAgo: 0,
+      createdAt: now.toISOString(),
     }] : []),
     ...normalizeStoredAlerts(storedAlertItems, farms),
-  ].sort((a, b) => getAlertTimestamp(b.createdAt) - getAlertTimestamp(a.createdAt));
+  ].sort((a, b) => (getAlertTimestamp(b.createdAt)?.getTime() ?? 0)
+    - (getAlertTimestamp(a.createdAt)?.getTime() ?? 0));
 
   const recentWarnings = alerts.map((alert) => ({
     ...alert,
@@ -206,34 +215,36 @@ function Dashboard() {
               </span>
             </div>
 
-            {recentWarnings.map((w) => (
-              <div
-                className="warning-item"
-                key={w.id}
-                onClick={() => handleWarningSeen(w.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") handleWarningSeen(w.id);
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label={`Mark ${w.farm} alert as seen`}
-                style={{ cursor: "pointer" }}
-              >
-                <div className="warning-item-top">
-                  <span className="warning-tag">{w.type}</span>
-                  <span
-                    className={`warning-status status-${w.status}`}
-                  >
-                    {w.status.replace(/^./, (letter) => letter.toUpperCase())}
-                  </span>
+            <div className="warnings-list">
+              {recentWarnings.map((w) => (
+                <div
+                  className="warning-item"
+                  key={w.id}
+                  onClick={() => handleWarningSeen(w.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") handleWarningSeen(w.id);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Mark ${w.farm} alert as seen`}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="warning-item-top">
+                    <span className="warning-tag">{w.type}</span>
+                    <span
+                      className={`warning-status status-${w.status}`}
+                    >
+                      {w.status.replace(/^./, (letter) => letter.toUpperCase())}
+                    </span>
+                  </div>
+                  <p className="warning-farm">{w.farm}</p>
+                  <p className="warning-detail">{w.detail}</p>
+                  <p className="warning-action">Action: {w.action}</p>
+                  <p className="warning-time">{w.time}</p>
                 </div>
-                <p className="warning-farm">{w.farm}</p>
-                <p className="warning-detail">{w.detail}</p>
-                <p className="warning-action">Action: {w.action}</p>
-                <p className="warning-time">{w.time}</p>
-              </div>
-            ))}
-            {recentWarnings.length === 0 && <p className="warning-empty">No alerts.</p>}
+              ))}
+              {recentWarnings.length === 0 && <p className="warning-empty">No alerts.</p>}
+            </div>
           </div>
 
           <div className="map-card grid-map">

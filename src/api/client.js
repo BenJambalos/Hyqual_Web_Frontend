@@ -58,7 +58,10 @@ export const api = {
   presence: () => apiRequest("/presence"),
   registerDevice: (data) => apiRequest("/device/registrations", jsonRequest("POST", data)),
   deviceState: (key) => apiRequest(`/device/state/${encodeURIComponent(key)}`),
-  readings: (parameter) => apiRequest(`/device/readings/${encodeURIComponent(parameter)}`),
+  readings: (parameter, { pondId } = {}) => {
+    const query = pondId == null ? "" : `?pondId=${encodeURIComponent(pondId)}`;
+    return apiRequest(`/device/readings/${encodeURIComponent(parameter)}${query}`);
+  },
   provisionDevice: (id) =>
     apiRequest(`/devices/${encodeURIComponent(id)}/credentials`, jsonRequest("POST", {})),
   revokeDevice: (id) =>

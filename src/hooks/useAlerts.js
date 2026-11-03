@@ -4,7 +4,12 @@ import { useFarms } from "./useFarms";
 import { useLiveReading } from "./useLiveReading";
 import { useDeviceStatus } from "./useDeviceStatus";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
-import { buildReadingAlerts, getAlertTimestamp, normalizeStoredAlerts } from "../utils/alertHelpers";
+import {
+  buildReadingAlerts,
+  getAlertDateKey,
+  getAlertTimestamp,
+  normalizeStoredAlerts,
+} from "../utils/alertHelpers";
 
 export function useAlerts() {
   const { items, loading: alertsLoading, error: alertsError } = useCollection("alerts");
@@ -15,6 +20,7 @@ export function useAlerts() {
   const alerts = useMemo(() => {
     const storedAlerts = normalizeStoredAlerts(items, farms);
     const generatedAlerts = buildReadingAlerts(history, farms);
+    const now = new Date();
     const offlineAlerts = statusReady && !deviceOnline ? [{
       id: "device-offline",
       farmId: LIVE_DEVICE_TARGET.farmId,
@@ -27,13 +33,14 @@ export function useAlerts() {
       message: "Monitoring device is offline and is not sending readings.",
       trend: "No current data",
       displayTime: "Now",
-      date: new Date().toISOString().slice(0, 10),
+      date: getAlertDateKey(now),
       daysAgo: 0,
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
     }] : [];
 
     return [...generatedAlerts, ...offlineAlerts, ...storedAlerts]
-      .sort((a, b) => getAlertTimestamp(b.createdAt) - getAlertTimestamp(a.createdAt));
+      .sort((a, b) => (getAlertTimestamp(b.createdAt)?.getTime() ?? 0)
+        - (getAlertTimestamp(a.createdAt)?.getTime() ?? 0));
   }, [items, farms, history, statusReady, deviceOnline]);
 
   return {

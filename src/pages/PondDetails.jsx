@@ -13,12 +13,14 @@ import { useFarms } from "../hooks/useFarms";
 import { useAlerts } from "../hooks/useAlerts";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 import { useDeviceStatus } from "../hooks/useDeviceStatus";
+import { buildReportBlob, formatFileSize } from "../utils/reportExport";
 import "./Dashboard.css";
 import "./FarmDetails.css";
 import "./PondDetails.css";
 
 const statusLabel = { normal: "Normal", critical: "Critical", moderate: "Moderate", offline: "Offline" };
 const tabs = ["History Logs", "Reports", "Alerts"];
+const historyFilters = ["all", "normal", "moderate", "critical", "offline"];
 
 function readingConfig(param) {
   const configs = {
@@ -34,13 +36,13 @@ function PondDetails() {
   const { farmId, pondId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("History Logs");
-  const [historyFilter, setHistoryFilter] = useState("normal");
+  const [historyFilter, setHistoryFilter] = useState("all");
   const [showDateModal, setShowDateModal] = useState(false);
   const [previewReportId, setPreviewReportId] = useState(null);
 
   // Always call hooks unconditionally (React rule) — safe even before the
   // farm/pond-not-found check below, since useLiveReading doesn't depend on them.
-  const { reading: liveReading, history: liveHistory, loading: liveLoading } = useLiveReading();
+  const { reading: liveReading, history: liveHistory, loading: liveLoading, error: readingsError } = useLiveReading(pondId);
   const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { alerts, loading: alertsLoading, error: alertsError } = useAlerts();
@@ -65,7 +67,9 @@ function PondDetails() {
     : getOverallStatus(displayReadings);
 
   const displayedHistory = liveHistory;
-  const filteredLogs = displayedHistory.filter((log) => log.status === historyFilter);
+  const filteredLogs = historyFilter === "all"
+    ? displayedHistory
+    : displayedHistory.filter((log) => log.status === historyFilter);
   const pondAlerts = alerts
     .filter((alert) => String(alert.farmId) === String(farm.id) && String(alert.pondId) === String(pond.id))
     .map((alert) => ({
@@ -83,10 +87,10 @@ function PondDetails() {
 
     let csv = `${escape(farm.name + " | " + pond.name + " - Historical Log")}\n`;
     csv += `${escape("Filter: " + statusLabel[historyFilter])}\n\n`;
-    csv += ["Time", "Temp (°C)", "DO (mg/L)", "pH", "Salinity (ppt)", "Status"].map(escape).join(",") + "\n";
+    csv += ["Date and time", "Temp (°C)", "DO (mg/L)", "pH", "Salinity (ppt)", "Status"].map(escape).join(",") + "\n";
 
     filteredLogs.forEach((log) => {
-      csv += [log.time, log.temp, log.do, log.ph, log.sal, statusLabel[log.status]].map(escape).join(",") + "\n";
+      csv += [new Date(log.createdAt).toLocaleString(), log.temp, log.do, log.ph, log.sal, statusLabel[log.status]].map(escape).join(",") + "\n";
     });
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -226,22 +230,20 @@ function PondDetails() {
                     </div>
 
                     <div className="filter-pills" style={{ marginBottom: 12 }}>
-                      {["normal", "critical", "offline"].map((s) => (
+                      {historyFilters.map((s) => (
                         <button
                           key={s}
                           className={"filter-pill" + (historyFilter === s ? " filter-pill-active" : "")}
                           onClick={() => setHistoryFilter(s)}
                         >
-                          {statusLabel[s]}
+                          {s === "all" ? "All" : statusLabel[s]}
                         </button>
                       ))}
                     </div>
 
-                    <p className="pd-log-date">June 27, 2026</p>
-
                     <div className="pd-log-table">
                       <div className="pd-log-header-row">
-                        <span>Time</span>
+                        <span>Date &amp; Time</span>
                         <span>Temp</span>
                         <span>DO</span>
                         <span>pH</span>
@@ -249,9 +251,9 @@ function PondDetails() {
                         <span>Status</span>
                       </div>
 
-                      {filteredLogs.map((log, i) => (
-                        <div className="pd-log-row" key={i}>
-                          <span>{log.time}</span>
+                      {filteredLogs.map((log) => (
+                        <div className="pd-log-row" key={log.createdAt}>
+                          <span>{new Date(log.createdAt).toLocaleString()}</span>
                           <span>{log.temp}</span>
                           <span>{log.do}</span>
                           <span>{log.ph}</span>
@@ -260,8 +262,16 @@ function PondDetails() {
                         </div>
                       ))}
 
-                      {filteredLogs.length === 0 && (
-                        <p className="pd-log-empty">No {statusLabel[historyFilter].toLowerCase()} readings logged.</p>
+                      {readingsError ? (
+                        <p className="pd-log-empty" role="alert">Unable to load this pond&apos;s reading logs.</p>
+                      ) : liveLoading ? (
+                        <p className="pd-log-empty">Loading reading logs...</p>
+                      ) : filteredLogs.length === 0 && (
+                        <p className="pd-log-empty">
+                          {displayedHistory.length === 0
+                            ? "No readings have been recorded for this pond yet."
+                            : `No ${historyFilter} readings logged.`}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -274,25 +284,40 @@ function PondDetails() {
                       <h3>Summarize reports</h3>
                     </div>
 
-                    {summaryReports.map((report) => (
-                      <div className="pd-report-item" key={report.id}>
-                        <span className="icon-box icon-box-green">
-                          <Download size={16} />
-                        </span>
-                        <div className="pd-report-info">
-                          <p className="pd-report-title">{report.title}</p>
-                          <p className="pd-report-range">{report.date} · {report.size}</p>
-                        </div>
-                        <div className="pd-report-actions">
-                          <button className="row-action-btn" onClick={() => handlePreviewReport(report)}>
-                            <Eye size={16} />
-                          </button>
-                          <button className="row-action-btn" onClick={() => handleDownloadReport(report)}>
+                    {summaryReports.map((report) => {
+                      const data = getReportData(
+                        report.id,
+                        { farmId: farm.id, pondId: pond.id },
+                        liveHistory,
+                        farms,
+                      );
+                      const dateRange = data?.dateRange || "—";
+                      const size = data
+                        ? formatFileSize(buildReportBlob(data, "PDF").size)
+                        : "—";
+
+                      return (
+                        <div className="pd-report-item" key={report.id}>
+                          <span className="icon-box icon-box-green">
                             <Download size={16} />
-                          </button>
+                          </span>
+                          <div className="pd-report-info">
+                            <p className="pd-report-title">{report.title}</p>
+                            <p className="pd-report-range">
+                              Date range: {dateRange} | File size: {size}
+                            </p>
+                          </div>
+                          <div className="pd-report-actions">
+                            <button className="row-action-btn" onClick={() => handlePreviewReport(report)}>
+                              <Eye size={16} />
+                            </button>
+                            <button className="row-action-btn" onClick={() => handleDownloadReport(report)}>
+                              <Download size={16} />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 

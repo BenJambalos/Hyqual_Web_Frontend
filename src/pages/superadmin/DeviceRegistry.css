@@ -19,7 +19,7 @@
 
 .dr-table-header-row {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr 1.5fr 1fr 1fr .8fr 1.6fr .8fr;
+  grid-template-columns: 1.2fr 1fr 1.5fr 1fr 1fr;
   padding: 14px 0;
   border-bottom: 1px solid #f3f4f6;
   font-size: 11px;
@@ -30,7 +30,7 @@
 
 .dr-table-row {
   display: grid;
-  grid-template-columns: 1fr 1.2fr 1fr 1.5fr 1fr 1fr .8fr 1.6fr .8fr;
+  grid-template-columns: 1.2fr 1fr 1.5fr 1fr 1fr;
   align-items: center;
   padding: 16px 0;
   border-bottom: 1px solid #f3f4f6;
@@ -38,34 +38,7 @@
   color: #111827;
 }
 
-.dr-device-id {
-  font-weight: 600;
-}
-
 .dr-muted {
-  color: #6b7280;
-}
-
-.dr-sensor-health {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.dr-sensor-dot {
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 5px;
-}
-
-.dr-sensor-online {
-  background: #e6f6ee;
-  color: #1f9d6e;
-}
-
-.dr-sensor-offline {
-  background: #f3f4f6;
   color: #6b7280;
 }
 
@@ -106,48 +79,6 @@
   text-align: center;
   color: #9ca3af;
   font-size: 13px;
-}
-
-.dr-provision-btn,
-.dr-credential-notice button {
-  border: 0;
-  border-radius: 8px;
-  padding: 7px 10px;
-  background: #e6f6ee;
-  color: #147a52;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dr-credential-notice {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 12px;
-  padding: 14px 0;
-  color: #92400e;
-}
-
-.dr-credential-notice p {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-weight: 600;
-}
-
-.dr-credential-notice label {
-  display: grid;
-  gap: 6px;
-  color: #374151;
-  font-size: 12px;
-}
-
-.dr-credential-notice input {
-  width: min(640px, 70vw);
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-family: monospace;
 }
 
 .dr-credential-error {

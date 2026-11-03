@@ -33,7 +33,7 @@ function Alerts() {
       return a.date >= customRange.from && a.date <= customRange.to;
     }
     if (activeTimeFilter === "all") return true;
-    return a.daysAgo <= maxDays[activeTimeFilter];
+    return a.daysAgo != null && a.daysAgo <= maxDays[activeTimeFilter];
   });
   useEffect(() => {
     if (loading || error || hasMarkedAlertsSeen.current) return;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Calendar, FileText, Download, ChevronDown, Eye } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Sidebar from "../components/Sidebar";
@@ -7,44 +7,15 @@ import ReportPreview from "../components/ReportPreview";
 import { summaryReports, availableFormats } from "../config/reportDefinitions";
 import "./ReportsAnalytics.css";
 import { getReportData } from "../utils/reportPreview";
-import { exportReport } from "../utils/reportExport";
+import { buildReportBlob, exportReport, formatFileSize } from "../utils/reportExport";
 import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import ReportsSection from "../components/ReportsSection";
+import { buildAnalytics } from "../utils/reportAnalytics";
 
 const statusFilters = ["All", "Normal", "Critical", "Warning", "Offline"];
 
 const filterKeyMap = { Normal: "normal", Critical: "critical", Warning: "warning", Offline: "offline" };
-const chartColors = { normal: "#1f9d6e", critical: "#dc2626", warning: "#f59e0b" };
-
-function buildAnalytics(history) {
-  const groups = history.reduce((result, reading) => {
-    const date = new Date(reading.createdAt);
-    const key = Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString([], { month: "short", day: "numeric" });
-    const group = result[key] || { month: key, normal: 0, critical: 0, warning: 0 };
-    if (reading.status === "normal") group.normal += 1;
-    if (reading.status === "critical") group.critical += 1;
-    if (reading.status === "moderate") group.warning += 1;
-    result[key] = group;
-    return result;
-  }, {});
-
-  const trend = Object.values(groups).reverse();
-  const total = history.length || 1;
-  const counts = [
-    { label: "Normal", key: "normal", color: chartColors.normal },
-    { label: "Critical", key: "critical", color: chartColors.critical },
-    { label: "Warning", key: "warning", color: chartColors.warning },
-  ];
-
-  return {
-    trend,
-    distribution: counts.map((item) => ({
-      ...item,
-      percent: Math.round((history.filter((reading) => reading.status === (item.key === "warning" ? "moderate" : item.key)).length / total) * 100),
-    })),
-  };
-}
 
 function ReportsAnalytics() {
   const [activeFilter, setActiveFilter] = useState("All");
@@ -58,12 +29,17 @@ function ReportsAnalytics() {
   const [selectedFormats, setSelectedFormats] = useState(
     Object.fromEntries(summaryReports.map((r) => [r.id, r.defaultFormat]))
   );
+  const reportMetadata = useMemo(() => Object.fromEntries(summaryReports.map((report) => {
+    const data = getReportData(report.id, {}, liveHistory, farms);
+    return [report.id, {
+      dateRange: data?.dateRange || "—",
+      size: data ? formatFileSize(buildReportBlob(data, selectedFormats[report.id]).size) : "—",
+    }];
+  })), [farms, liveHistory, selectedFormats]);
 
   const activeChartKeys =
     activeFilter === "All"
-      ? ["normal", "critical", "warning"]
-      : activeFilter === "Offline"
-      ? []
+      ? ["normal", "critical", "warning", "offline"]
       : [filterKeyMap[activeFilter]];
 
   const filteredDistribution =
@@ -132,29 +108,25 @@ function ReportsAnalytics() {
                   </button>
                 </div>
 
-                {activeChartKeys.length === 0 ? (
-                  <p className="chart-empty-note">Offline status has no trend data to display.</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <AreaChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                      <Tooltip />
-                      {activeChartKeys.map((key) => (
-                        <Area
-                          key={key}
-                          type="monotone"
-                          dataKey={key}
-                          stroke={chartColors[key]}
-                          fill={chartColors[key]}
-                          fillOpacity={0.15}
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                    <Tooltip />
+                    {activeChartKeys.map((key) => (
+                      <Area
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        stroke={statusDistribution.find((status) => status.key === key)?.color}
+                        fill={statusDistribution.find((status) => status.key === key)?.color}
+                        fillOpacity={0.15}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
 
               <div className="distribution-card">
@@ -190,7 +162,9 @@ function ReportsAnalytics() {
 
                   <div className="report-info">
                     <p className="report-title">{report.title}</p>
-                    <p className="report-meta">{report.date} · {report.size}</p>
+                    <p className="report-meta">
+                      Date range: {reportMetadata[report.id]?.dateRange} | File size: {reportMetadata[report.id]?.size}
+                    </p>
                   </div>
 
                   <div className="report-actions">

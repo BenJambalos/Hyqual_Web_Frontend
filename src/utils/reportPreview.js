@@ -2,10 +2,10 @@ import { getParamStatus } from "./thresholds";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 
 const REPORT_DEFINITIONS = {
-  1: { title: "Weekly Summary Report", dateRangeLabel: "June 8 - 14, 2026", start: "2026-06-08", end: "2026-06-14", generatedDate: "June 14, 2026", reportId: "HQ-2026-0614A" },
-  2: { title: "Weekly Summary Report", dateRangeLabel: "June 4 - 10, 2026", start: "2026-06-04", end: "2026-06-10", generatedDate: "June 10, 2026", reportId: "HQ-2026-0610A" },
-  3: { title: "Daily Summary Report", dateRangeLabel: "June 1, 2026", start: "2026-06-01", end: "2026-06-01", generatedDate: "June 01, 2026", reportId: "HQ-2026-0601D" },
-  4: { title: "Daily Summary Report", dateRangeLabel: "May 28, 2026", start: "2026-05-28", end: "2026-05-28", generatedDate: "May 28, 2026", reportId: "HQ-2026-0528D" },
+  1: { title: "Weekly Summary Report", period: "week" },
+  2: { title: "Weekly Summary Report", period: "week" },
+  3: { title: "Daily Summary Report", period: "day" },
+  4: { title: "Daily Summary Report", period: "day" },
 };
 
 const paramMeta = {
@@ -33,6 +33,63 @@ function liveRowsToReportRows(liveHistory) {
       dissolvedOxygen: row.do,
       salinity: row.sal,
     }));
+}
+
+function dateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+}
+
+function formatReportDate(date) {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(date);
+}
+
+function formatDateRange(start, end) {
+    if (start.getFullYear() !== end.getFullYear()) {
+      return `${formatReportDate(start)} - ${formatReportDate(end)}`;
+    }
+    if (start.getMonth() !== end.getMonth()) {
+      const startLabel = new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+      }).format(start);
+      return `${startLabel} - ${formatReportDate(end)}`;
+    }
+    const month = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+    }).format(start);
+    return `${month} ${start.getDate()} - ${end.getDate()}, ${start.getFullYear()}`;
+}
+
+export function getReportPeriod(reportId, now = new Date()) {
+    const definition = REPORT_DEFINITIONS[reportId];
+    if (!definition) return null;
+
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (definition.period === "week") {
+      const daysSinceMonday = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - daysSinceMonday);
+    }
+    const endExclusive = new Date(start);
+    endExclusive.setDate(endExclusive.getDate() + (definition.period === "week" ? 7 : 1));
+    const end = new Date(endExclusive);
+    end.setDate(end.getDate() - 1);
+
+    return {
+      start,
+      endExclusive,
+      dateRange: definition.period === "week"
+        ? formatDateRange(start, end)
+        : formatReportDate(start),
+      generatedDate: formatReportDate(now),
+      reportId: `HQ-${dateKey(start)}${definition.period === "week" ? "W" : "D"}`,
+    };
 }
 
 function buildPondReport(farmId, pond, liveHistory = []) {
@@ -75,9 +132,16 @@ function buildPondReport(farmId, pond, liveHistory = []) {
   return { pondName: pond.name, parameters, incidents };
 }
 
-export function getReportData(reportId, scope = {}, liveHistory = [], farmData = []) {
+export function getReportData(reportId, scope = {}, liveHistory = [], farmData = [], now = new Date()) {
   const definition = REPORT_DEFINITIONS[reportId];
   if (!definition) return null;
+  const period = getReportPeriod(reportId, now);
+  const periodHistory = liveHistory.filter((row) => {
+    const timestamp = new Date(row.createdAt).getTime();
+    return Number.isFinite(timestamp)
+      && timestamp >= period.start.getTime()
+      && timestamp < period.endExclusive.getTime();
+  });
 
   const targetFarms = scope.farmId
     ? farmData.filter((farm) => String(farm.id) === String(scope.farmId))
@@ -87,7 +151,7 @@ export function getReportData(reportId, scope = {}, liveHistory = [], farmData =
     const targetPonds = scope.pondId
       ? farm.ponds.filter((pond) => String(pond.id) === String(scope.pondId))
       : farm.ponds;
-    const ponds = targetPonds.map((pond) => buildPondReport(farm.id, pond, liveHistory));
+    const ponds = targetPonds.map((pond) => buildPondReport(farm.id, pond, periodHistory));
     const severity = { normal: 0, moderate: 1, critical: 2, offline: 1 };
     const allStatuses = ponds.flatMap((pond) => pond.parameters.map((parameter) => parameter.status));
     const overallStatus = allStatuses.reduce(
@@ -112,15 +176,12 @@ export function getReportData(reportId, scope = {}, liveHistory = [], farmData =
     criticalOverall: farmReports.filter((farm) => farm.overallStatus === "critical").length,
   };
 
-  const liveRows = liveRowsToReportRows(liveHistory);
-  const liveDates = liveRows.map((row) => row.recordedAt.slice(0, 10)).sort();
-
   return {
     title: definition.title,
-    dateRange: liveDates.length > 0 ? `${liveDates[0]} - ${liveDates[liveDates.length - 1]}` : definition.dateRangeLabel,
-    generatedDate: liveDates.length > 0 ? new Date().toISOString().slice(0, 10) : definition.generatedDate,
+    dateRange: period.dateRange,
+    generatedDate: period.generatedDate,
     preparedFor: "BFAR Oriental Mindoro",
-    reportId: definition.reportId,
+    reportId: period.reportId,
     summary,
     farms: farmReports,
     isScoped: Boolean(scope.farmId),

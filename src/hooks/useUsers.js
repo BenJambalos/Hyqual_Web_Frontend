@@ -13,7 +13,7 @@ export function useUsers() {
   };
 
   const archiveUser = async (id) => {
-    await api.updateUser(id, { archived: true });
+    await api.updateUser(id, { status: "archived" });
   };
 
   const restoreUser = async (id) => {

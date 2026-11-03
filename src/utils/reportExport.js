@@ -138,7 +138,7 @@ export function exportReportAsPDF(report) {
     y += 4;
   });
 
-  doc.save(`${safeFilename(report)}.pdf`);
+  return doc.output("blob");
 }
 
 // ---------------------------------------------------------------------------
@@ -166,8 +166,7 @@ export function exportReportAsCSV(report) {
     });
   }
 
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  triggerDownload(blob, `${safeFilename(report)}.csv`);
+  return new Blob([csv], { type: "text/csv;charset=utf-8;" });
 }
 
 // ---------------------------------------------------------------------------
@@ -221,17 +220,33 @@ export function exportReportAsXLSX(report) {
     XLSX.utils.book_append_sheet(wb, incidentSheet, "Incidents");
   }
 
-  XLSX.writeFile(wb, `${safeFilename(report)}.xlsx`);
+  const data = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  return new Blob([data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}
+
+export function buildReportBlob(report, format) {
+  if (format === "PDF") return exportReportAsPDF(report);
+  if (format === "CSV") return exportReportAsCSV(report);
+  if (format === "XLSX") return exportReportAsXLSX(report);
+  throw new Error(`Unsupported report format: ${format}`);
+}
+
+export function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  const sizeInKilobytes = bytes / 1024;
+  if (sizeInKilobytes < 1024) return `${sizeInKilobytes.toFixed(1)} KB`;
+  return `${(sizeInKilobytes / 1024).toFixed(1)} MB`;
 }
 
 // ---------------------------------------------------------------------------
 // Single entry point — call this one function, pass whichever format was picked
 // ---------------------------------------------------------------------------
 export function exportReport(report, format) {
-  if (format === "PDF") exportReportAsPDF(report);
-  else if (format === "CSV") exportReportAsCSV(report);
-  else if (format === "XLSX") exportReportAsXLSX(report);
-  else return;
+  const blob = buildReportBlob(report, format);
+  const extension = format.toLowerCase();
+  triggerDownload(blob, `${safeFilename(report)}.${extension}`);
 
   void logAuditEvent({
     type: "export",

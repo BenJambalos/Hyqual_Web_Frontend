@@ -12,13 +12,13 @@ const tabs = ["All", "BFAR Admin", "Farm Owner"];
 
 function ArchivedAccounts() {
   const navigate = useNavigate();
-  const { users, restoreUser, deleteUser } = useUsers();
+  const { users, loading, error, restoreUser, deleteUser } = useUsers();
 
   const [activeTab, setActiveTab] = useState("All");
   const [confirmAction, setConfirmAction] = useState(null); // { type: "restore"|"delete", user }
 
   const archivedUsers = users
-    .filter((u) => u.archived)
+    .filter((user) => user.archived === true || String(user.status).toLowerCase() === "archived")
     .filter((u) => activeTab === "All" || u.role === activeTab);
 
   const handleConfirm = () => {
@@ -55,11 +55,17 @@ function ArchivedAccounts() {
         </div>
 
         <div className="aa-list">
-          {archivedUsers.length === 0 && (
+          {error && (
+            <p className="aa-empty" role="alert">
+              Unable to load archived accounts. Please refresh and try again.
+            </p>
+          )}
+          {loading && <p className="aa-empty">Loading archived accounts...</p>}
+          {!loading && !error && archivedUsers.length === 0 && (
             <p className="aa-empty">No archived accounts in this category.</p>
           )}
 
-          {archivedUsers.map((user) => (
+          {!error && archivedUsers.map((user) => (
             <div className="aa-card" key={user.id}>
               <div className="aa-card-main">
                 <div className="aa-card-top">

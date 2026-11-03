@@ -23,15 +23,18 @@ function buildReadingData(entriesByParam) {
 
   const historyByTimestamp = new Map();
   params.forEach((param) => entriesByParam[param].forEach((entry) => {
-    const current = historyByTimestamp.get(entry.createdAt) || {};
+    const key = `${entry.pondId ?? ""}:${entry.createdAt}`;
+    const current = historyByTimestamp.get(key) || { pondId: entry.pondId };
     current[param] = entry.value;
-    historyByTimestamp.set(entry.createdAt, current);
+    historyByTimestamp.set(key, current);
   }));
 
   const history = [...historyByTimestamp.entries()]
-    .map(([createdAt, values]) => {
+    .map(([key, values]) => {
+      const createdAt = key.slice(key.indexOf(":") + 1);
       const sal = ecToSalinity(values.ec);
       return {
+        pondId: values.pondId,
         time: new Date(createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
         temp: values.temperature ?? null,
         ph: values.ph ?? null,
@@ -51,10 +54,11 @@ function buildReadingData(entriesByParam) {
   return { reading, history };
 }
 
-export function useLiveReading() {
+export function useLiveReading(pondId) {
   const [reading, setReading] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -63,7 +67,7 @@ export function useLiveReading() {
 
     const refresh = async () => {
       try {
-        const values = await Promise.all(params.map((param) => api.readings(param)));
+        const values = await Promise.all(params.map((param) => api.readings(param, { pondId })));
         if (!active) return;
         const data = buildReadingData(Object.fromEntries(params.map((param, index) => [
           param,
@@ -71,8 +75,12 @@ export function useLiveReading() {
         ])));
         setReading(data.reading);
         setHistory(data.history);
+        setError(null);
       } catch (error) {
-        if (active) console.error("Unable to load live readings:", error);
+        if (active) {
+          console.error("Unable to load live readings:", error);
+          setError(error);
+        }
       } finally {
         if (active) {
           setLoading(false);
@@ -86,7 +94,7 @@ export function useLiveReading() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [pondId]);
 
-  return { reading, history, loading };
+  return { reading, history, loading, error };
 }

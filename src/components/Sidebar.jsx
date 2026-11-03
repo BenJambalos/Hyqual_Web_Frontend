@@ -24,7 +24,12 @@ function Sidebar() {
   const [seenAlertIds, setSeenAlertIds] = useState(() => getSeenAlertIds());
   const storedUser = JSON.parse(localStorage.getItem("hyqual_user"));
   const currentUser = storedUser || { role: "Unknown" };
-  const unseenAlertCount = alerts.filter((alert) => !seenAlertIds.includes(alert.id)).length;
+  const unseenAlertCount = alerts.filter(
+    (alert) => !alert.isResolved
+      && alert.daysAgo != null
+      && alert.daysAgo <= 1
+      && !seenAlertIds.includes(alert.id)
+  ).length;
 
   useEffect(() => {
     const syncSeenAlerts = () => setSeenAlertIds(getSeenAlertIds());

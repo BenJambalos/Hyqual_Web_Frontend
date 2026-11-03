@@ -157,11 +157,13 @@
 
 /* WARNINGS PANEL */
 .warnings-panel {
+  display: flex;
+  flex-direction: column;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 18px;
-  overflow-y: auto;
+  overflow: hidden;
   max-height: 360px;
 }
 
@@ -170,7 +172,10 @@
   justify-content: space-between;
   align-items: center;
   column-gap: 8px;
-  margin-bottom: 12px;
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  padding: 0 0 12px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .warnings-panel-header h3 {
@@ -184,16 +189,22 @@
   text-decoration: none;
 }
 
-.warnings-panel::-webkit-scrollbar {
+.warnings-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.warnings-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.warnings-panel::-webkit-scrollbar-thumb {
+.warnings-list::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 10px;
 }
 
-.warnings-panel::-webkit-scrollbar-track {
+.warnings-list::-webkit-scrollbar-track {
   background: transparent;
 }
 
