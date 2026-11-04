@@ -6,7 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "node scripts/dev.js",
+    "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "test": "vitest",

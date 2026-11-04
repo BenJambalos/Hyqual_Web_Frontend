@@ -1,4 +1,8 @@
-const API_ROOT = "/api";
+// Set VITE_API_BASE_URL to the deployed Node.js backend origin when the
+// frontend and backend are deployed as separate Railway services. Leave it
+// empty when the frontend is served by the same backend origin.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+const API_ROOT = `${API_BASE_URL}/api`;
 
 export class ApiError extends Error {
   constructor(message, status) {

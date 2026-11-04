@@ -26,7 +26,7 @@ function ReportsAnalytics() {
   const [previewReportId, setPreviewReportId] = useState(null);
   const { history: liveHistory } = useLiveReading();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
-  const { counts: mlCounts, riskResults, forecasts, loading: mlLoading, error: mlError } = useMlAnalytics();
+  const { counts: mlCounts, riskResults, forecasts, forecastEvaluationSamples, mlJobRuns, loading: mlLoading, error: mlError } = useMlAnalytics();
   const { trend: trendData, distribution: statusDistribution } = buildAnalytics(liveHistory);
   const [selectedFormats, setSelectedFormats] = useState(
     Object.fromEntries(summaryReports.map((r) => [r.id, r.defaultFormat]))
@@ -154,6 +154,10 @@ function ReportsAnalytics() {
             <ReportsSection
               mlData={{ riskResults, forecasts }}
               mlCounts={mlCounts}
+              evaluationData={{
+                arimaSamples: forecastEvaluationSamples || [],
+                reliability: mlJobRuns || [],
+              }}
               mlLoading={mlLoading}
               mlError={mlError}
             />

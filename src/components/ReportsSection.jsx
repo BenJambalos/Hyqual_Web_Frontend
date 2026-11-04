@@ -9,11 +9,8 @@ import {
 } from "recharts";
 import {
   computeArimaMetrics,
-  computeHybridWarningAccuracy,
   computeIsoWeightedMean,
-  computeRandomForestMetrics,
   computeSensorAccuracy,
-  computeSystemReliability,
 } from "../utils/reportMetrics";
 import "./ReportsSection.css";
 
@@ -29,11 +26,23 @@ function ReportsSection({
   mlError = null,
 }) {
   const sensorMetrics = computeSensorAccuracy(evaluationData.sensorSamples);
-  const randomForest = computeRandomForestMetrics(evaluationData.randomForestSamples);
   const arimaMetrics = computeArimaMetrics(evaluationData.arimaSamples);
-  const hybrid = computeHybridWarningAccuracy(evaluationData.hybridScenarios);
-  const reliability = computeSystemReliability(evaluationData.reliability);
   const isoResults = computeIsoWeightedMean(evaluationData.isoCriteria);
+  const riskResults = Array.isArray(mlData.riskResults) ? mlData.riskResults : [];
+  const riskClassCounts = ["Low", "Moderate", "High"].map((riskClass) => ({
+    riskClass,
+    count: riskResults.filter((result) => result.riskClass === riskClass).length,
+  }));
+  const hybridCounts = ["Normal", "Warning", "Critical"].map((status) => ({
+    status,
+    count: riskResults.filter((result) => result.hybridStatus === status).length,
+  }));
+  const jobRuns = Array.isArray(evaluationData.reliability) ? evaluationData.reliability : [];
+  const reliabilityRows = ["risk", "forecast"].map((jobName) => {
+    const runs = jobRuns.filter((run) => String(run.jobName).toLowerCase() === jobName);
+    const successful = runs.filter((run) => ["success", "partial"].includes(String(run.status).toLowerCase())).length;
+    return { jobName, successful, total: runs.length, percent: runs.length ? (successful / runs.length) * 100 : null };
+  });
 
   return (
     <section className="report-metrics" aria-label="Model and system evaluation metrics">
@@ -138,7 +147,7 @@ function ReportsSection({
 
         <section className="report-metric-panel">
           <h3>Sensor accuracy</h3>
-          <p className="report-metric-caption">AE and PE are signed; MAE is absolute. PE excludes zero reference values.</p>
+          <p className="report-metric-caption">Requires sensor calibration/reference measurements. The current database stores readings but not independent reference values, so accuracy cannot be calculated honestly from readings alone.</p>
           <div className="report-table-wrap">
             <table>
               <thead>
@@ -163,39 +172,28 @@ function ReportsSection({
           <div className="report-metric-title-row">
             <div>
               <h3>Random Forest risk classification</h3>
-              <p className="report-metric-caption">Overall accuracy: {formatNumber(randomForest.accuracy, "%")} · {randomForest.sampleCount} scenarios</p>
+              <p className="report-metric-caption">{riskResults.length} saved classifications. Accuracy requires a separately labeled test dataset.</p>
             </div>
           </div>
-          <div className="report-chart" role="img" aria-label="Random Forest F1-score by risk class">
+          <div className="report-chart" role="img" aria-label="Saved Random Forest classifications by risk class">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={randomForest.byClass} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+              <BarChart data={riskClassCounts} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="riskClass" tick={{ fontSize: 12 }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value) => [`${Number(value).toFixed(2)}%`, "F1-score"]} />
-                <Bar dataKey="f1" name="F1-score" fill="#16866a" radius={[3, 3, 0, 0]} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="count" name="Saved classifications" fill="#16866a" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="report-table-wrap">
             <table>
-              <thead>
-                <tr><th>Risk class</th><th>Accuracy*</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
-              </thead>
-              <tbody>
-                {randomForest.byClass.map((metric) => (
-                  <tr key={metric.riskClass}>
-                    <th scope="row">{metric.riskClass}</th>
-                    <td>{formatNumber(metric.accuracy, "%")}</td>
-                    <td>{formatNumber(metric.precision, "%")}</td>
-                    <td>{formatNumber(metric.recall, "%")}</td>
-                    <td>{formatNumber(metric.f1, "%")}</td>
-                  </tr>
-                ))}
-              </tbody>
+              <thead><tr><th>Risk class</th><th>Saved results</th></tr></thead>
+              <tbody>{riskClassCounts.map((metric) => (
+                <tr key={metric.riskClass}><th scope="row">{metric.riskClass}</th><td>{metric.count}</td></tr>
+              ))}</tbody>
             </table>
           </div>
-          <p className="report-metric-footnote">*Per-class accuracy uses one-vs-rest classification.</p>
         </section>
 
         <section className="report-metric-panel">
@@ -223,8 +221,13 @@ function ReportsSection({
 
         <section className="report-metric-panel report-metric-highlight">
           <h3>Hybrid early warning</h3>
-          <p className="report-metric-big">{formatNumber(hybrid.accuracy, "%")}</p>
-          <p className="report-metric-caption">{hybrid.correctCount} correct statuses / {hybrid.totalCount} test scenarios</p>
+          <p className="report-metric-big">{riskResults.length}</p>
+          <p className="report-metric-caption">Saved hybrid results by current status</p>
+          <div className="report-table-wrap"><table>
+            <thead><tr><th>Status</th><th>Results</th></tr></thead>
+            <tbody>{hybridCounts.map((item) => <tr key={item.status}><th scope="row">{item.status}</th><td>{item.count}</td></tr>)}</tbody>
+          </table></div>
+          <p className="report-metric-footnote">Warning accuracy requires labeled expected outcomes, which are not stored in the current results table.</p>
         </section>
 
         <section className="report-metric-panel">
@@ -235,11 +238,11 @@ function ReportsSection({
                 <tr><th>Measure</th><th>Successful</th><th>Total</th><th>Rate</th></tr>
               </thead>
               <tbody>
-                {reliability.map((metric) => (
-                  <tr key={metric.key}>
-                    <th scope="row">{metric.label}</th>
-                    <td>{metric.successful ?? "—"}</td>
-                    <td>{metric.total ?? "—"}</td>
+                {reliabilityRows.map((metric) => (
+                  <tr key={metric.jobName}>
+                    <th scope="row">{metric.jobName === "risk" ? "Risk classification jobs" : "Forecast jobs"}</th>
+                    <td>{metric.successful}</td>
+                    <td>{metric.total}</td>
                     <td>{formatNumber(metric.percent, "%")}</td>
                   </tr>
                 ))}
