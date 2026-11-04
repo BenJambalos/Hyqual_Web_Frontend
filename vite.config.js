@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "https://hyqualwebbackend-production-3ef3.up.railway.app",
         changeOrigin: true,
         secure: true
       }

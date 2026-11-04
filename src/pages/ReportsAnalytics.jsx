@@ -12,6 +12,7 @@ import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import ReportsSection from "../components/ReportsSection";
 import { buildAnalytics } from "../utils/reportAnalytics";
+import { useMlAnalytics } from "../hooks/useMlAnalytics";
 
 const statusFilters = ["All", "Normal", "Critical", "Warning", "Offline"];
 
@@ -25,6 +26,7 @@ function ReportsAnalytics() {
   const [previewReportId, setPreviewReportId] = useState(null);
   const { history: liveHistory } = useLiveReading();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
+  const { counts: mlCounts, riskResults, forecasts, loading: mlLoading, error: mlError } = useMlAnalytics();
   const { trend: trendData, distribution: statusDistribution } = buildAnalytics(liveHistory);
   const [selectedFormats, setSelectedFormats] = useState(
     Object.fromEntries(summaryReports.map((r) => [r.id, r.defaultFormat]))
@@ -149,7 +151,12 @@ function ReportsAnalytics() {
               </div>
             </div>
 
-            <ReportsSection />
+            <ReportsSection
+              mlData={{ riskResults, forecasts }}
+              mlCounts={mlCounts}
+              mlLoading={mlLoading}
+              mlError={mlError}
+            />
 
             <div className="summary-reports-card">
               <h3>Summary reports</h3>

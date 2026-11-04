@@ -62,6 +62,7 @@ export const api = {
     const query = pondId == null ? "" : `?pondId=${encodeURIComponent(pondId)}`;
     return apiRequest(`/device/readings/${encodeURIComponent(parameter)}${query}`);
   },
+  mlAnalytics: () => apiRequest("/analytics/ml"),
   provisionDevice: (id) =>
     apiRequest(`/devices/${encodeURIComponent(id)}/credentials`, jsonRequest("POST", {})),
   revokeDevice: (id) =>

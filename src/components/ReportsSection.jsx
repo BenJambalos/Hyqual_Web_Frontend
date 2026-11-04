@@ -21,7 +21,13 @@ function formatNumber(value, suffix = "") {
   return value == null ? "—" : `${value.toFixed(2)}${suffix}`;
 }
 
-function ReportsSection({ evaluationData = {} }) {
+function ReportsSection({
+  evaluationData = {},
+  mlData = {},
+  mlCounts = { riskResults: 0, upcomingForecasts: 0 },
+  mlLoading = false,
+  mlError = null,
+}) {
   const sensorMetrics = computeSensorAccuracy(evaluationData.sensorSamples);
   const randomForest = computeRandomForestMetrics(evaluationData.randomForestSamples);
   const arimaMetrics = computeArimaMetrics(evaluationData.arimaSamples);
@@ -40,6 +46,96 @@ function ReportsSection({ evaluationData = {} }) {
       </div>
 
       <div className="report-metrics-grid">
+        <section className="report-metric-panel">
+          <h3>Latest ML risk classifications</h3>
+          <p className="report-metric-caption">
+            {mlLoading ? "Checking the backend and database..." : `${mlCounts.riskResults} saved risk results`}
+          </p>
+          {mlError ? (
+            <div className="report-table-empty" role="alert">
+              <p>{mlError.message}</p>
+              {mlError.status === 404 ? (
+                <p>Deploy the updated backend API, then reload this page.</p>
+              ) : mlError.status === 500 ? (
+                <p>Check that the backend is deployed and its MySQL database has the ML schema/migration. The backend logs contain the database error.</p>
+              ) : mlError.status === 401 || mlError.status === 403 ? (
+                <p>Your session may have expired or may not have permission. Sign in again and retry.</p>
+              ) : (
+                <p>Check that the backend is reachable, then reload this page.</p>
+              )}
+            </div>
+          ) : mlLoading ? (
+            <p className="report-table-empty">Loading ML results...</p>
+          ) : (
+            <div className="report-table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Farm / pond</th><th>Risk</th><th>Hybrid status</th><th>Confidence</th><th>Calculated</th></tr>
+                </thead>
+                <tbody>
+                  {mlData.riskResults?.length ? mlData.riskResults.slice(0, 10).map((result) => {
+                    const probability = {
+                      Low: result.probLow,
+                      Moderate: result.probModerate,
+                      High: result.probHigh,
+                    }[result.riskClass];
+                    const confidence = probability == null
+                      ? "—"
+                      : `${(Number(probability) * 100).toFixed(1)}%`;
+                    return (
+                      <tr key={result.id}>
+                        <th scope="row">{result.farmName} / {result.pondName}</th>
+                        <td>{result.riskClass}</td>
+                        <td>{result.hybridStatus}</td>
+                        <td>{confidence}</td>
+                        <td>{result.calculatedAt ? new Date(result.calculatedAt).toLocaleString() : "—"}</td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr><td className="report-table-empty" colSpan="5">
+                      No risk results saved yet. The seed file does not create these; the ML service must write them.
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="report-metric-panel">
+          <h3>Upcoming water-quality forecasts</h3>
+          <p className="report-metric-caption">
+            {mlLoading ? "Checking the backend and database..." : `${mlCounts.upcomingForecasts} upcoming forecasts`}
+          </p>
+          {mlError ? (
+            <p className="report-table-empty">Unable to load forecasts.</p>
+          ) : mlLoading ? (
+            <p className="report-table-empty">Loading forecasts...</p>
+          ) : (
+            <div className="report-table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Farm / pond</th><th>Parameter</th><th>Predicted value</th><th>For</th></tr>
+                </thead>
+                <tbody>
+                  {mlData.forecasts?.length ? mlData.forecasts.slice(0, 12).map((forecast) => (
+                    <tr key={forecast.id}>
+                      <th scope="row">{forecast.farmName} / {forecast.pondName}</th>
+                      <td>{forecast.parameter.replaceAll("_", " ")}</td>
+                      <td>{Number(forecast.value).toFixed(2)}</td>
+                      <td>{forecast.predictedFor ? new Date(forecast.predictedFor).toLocaleString() : "—"}</td>
+                    </tr>
+                  )) : (
+                    <tr><td className="report-table-empty" colSpan="4">
+                      No upcoming forecasts. Confirm that the ML service has written forecasts for future dates.
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
         <section className="report-metric-panel">
           <h3>Sensor accuracy</h3>
           <p className="report-metric-caption">AE and PE are signed; MAE is absolute. PE excludes zero reference values.</p>

@@ -1,5 +1,4 @@
 import { getParamStatus } from "./thresholds";
-import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 
 const REPORT_DEFINITIONS = {
   1: { title: "Weekly Summary Report", period: "week" },
@@ -92,10 +91,9 @@ export function getReportPeriod(reportId, now = new Date()) {
     };
 }
 
-function buildPondReport(farmId, pond, liveHistory = []) {
-  const isLivePond = String(farmId) === String(LIVE_DEVICE_TARGET.farmId)
-    && String(pond.id) === String(LIVE_DEVICE_TARGET.pondId);
-  const rows = isLivePond && liveHistory.length > 0 ? liveRowsToReportRows(liveHistory) : [];
+function buildPondReport(pond, liveHistory = []) {
+  const pondHistory = liveHistory.filter((row) => String(row.pondId) === String(pond.id));
+  const rows = liveRowsToReportRows(pondHistory);
 
   const parameters = Object.values(paramMeta).map((meta) => {
     const values = rows.map((row) => row[meta.key]).filter((value) => value != null);
@@ -151,7 +149,7 @@ export function getReportData(reportId, scope = {}, liveHistory = [], farmData =
     const targetPonds = scope.pondId
       ? farm.ponds.filter((pond) => String(pond.id) === String(scope.pondId))
       : farm.ponds;
-    const ponds = targetPonds.map((pond) => buildPondReport(farm.id, pond, periodHistory));
+    const ponds = targetPonds.map((pond) => buildPondReport(pond, periodHistory));
     const severity = { normal: 0, moderate: 1, critical: 2, offline: 1 };
     const allStatuses = ponds.flatMap((pond) => pond.parameters.map((parameter) => parameter.status));
     const overallStatus = allStatuses.reduce(

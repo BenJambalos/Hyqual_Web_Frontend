@@ -33,15 +33,34 @@ describe("report date periods", () => {
       3,
       {},
       [
-        { createdAt: "2026-11-04T06:00:00", temp: 25 },
-        { createdAt: "2026-11-03T06:00:00", temp: 10 },
-        { createdAt: "2026-08-04T06:00:00", temp: 40 },
+        { pondId: 3, createdAt: "2026-11-04T06:00:00", temp: 25 },
+        { pondId: 3, createdAt: "2026-11-03T06:00:00", temp: 10 },
+        { pondId: 3, createdAt: "2026-08-04T06:00:00", temp: 40 },
       ],
-      [{ id: 3, name: "Farm", ponds: [{ id: "A", name: "Pond" }] }],
+      [{ id: 3, name: "Farm", ponds: [{ id: 3, name: "Pond" }] }],
       now,
     );
 
     expect(report.dateRange).toBe("November 4, 2026");
     expect(report.farms[0].ponds[0].parameters[0].weeklyAvg).toBe("25.00 °C");
+  });
+
+  it("calculates each pond's weekly average from its own readings", () => {
+    const report = getReportData(
+      3,
+      {},
+      [
+        { pondId: 3, createdAt: "2026-11-04T06:00:00", temp: 25 },
+        { pondId: 4, createdAt: "2026-11-04T06:00:00", temp: 35 },
+      ],
+      [{ id: 2, name: "Farm", ponds: [
+        { id: 3, name: "Pond A" },
+        { id: 4, name: "Pond B" },
+      ] }],
+      now,
+    );
+
+    expect(report.farms[0].ponds.map((pond) => pond.parameters[0].weeklyAvg))
+      .toEqual(["25.00 °C", "35.00 °C"]);
   });
 });
