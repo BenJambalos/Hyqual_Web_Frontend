@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Calendar, FileText, Download, ChevronDown, Eye } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Sidebar from "../components/Sidebar";
@@ -8,11 +8,12 @@ import { summaryReports, availableFormats } from "../config/reportDefinitions";
 import "./ReportsAnalytics.css";
 import { getReportData } from "../utils/reportPreview";
 import { buildReportBlob, exportReport, formatFileSize } from "../utils/reportExport";
-import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
+import { useLiveReading } from "../hooks/useLiveReading";
 import ReportsSection from "../components/ReportsSection";
 import { buildAnalytics } from "../utils/reportAnalytics";
 import { useMlAnalytics } from "../hooks/useMlAnalytics";
+import { useReportReadings } from "../hooks/useReportReadings";
 
 const statusFilters = ["All", "Normal", "Critical", "Warning", "Offline"];
 
@@ -24,20 +25,24 @@ function ReportsAnalytics() {
   const [, setCustomRange] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [previewReportId, setPreviewReportId] = useState(null);
-  const { history: liveHistory } = useLiveReading();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
+  const { history: liveHistory } = useLiveReading();
+  const weeklyReadings = useReportReadings(1);
+  const dailyReadings = useReportReadings(3);
+  const reportReadingsById = { 1: weeklyReadings, 3: dailyReadings };
   const { counts: mlCounts, riskResults, forecasts, forecastEvaluationSamples, mlJobRuns, loading: mlLoading, error: mlError } = useMlAnalytics();
   const { trend: trendData, distribution: statusDistribution } = buildAnalytics(liveHistory);
   const [selectedFormats, setSelectedFormats] = useState(
     Object.fromEntries(summaryReports.map((r) => [r.id, r.defaultFormat]))
   );
-  const reportMetadata = useMemo(() => Object.fromEntries(summaryReports.map((report) => {
-    const data = getReportData(report.id, {}, liveHistory, farms);
+  const reportMetadata = Object.fromEntries(summaryReports.map((report) => {
+    const readings = reportReadingsById[report.id];
+    const data = readings?.data && getReportData(report.id, {}, [], farms, undefined, readings.data);
     return [report.id, {
-      dateRange: data?.dateRange || "—",
+      dateRange: data?.dateRange || (readings?.loading ? "Loading..." : readings?.error ? "Unable to load" : "—"),
       size: data ? formatFileSize(buildReportBlob(data, selectedFormats[report.id]).size) : "—",
     }];
-  })), [farms, liveHistory, selectedFormats]);
+  }));
 
   const activeChartKeys =
     activeFilter === "All"
@@ -60,7 +65,16 @@ function ReportsAnalytics() {
 
   const handleDownload = (report) => {
     const format = selectedFormats[report.id];
-    const fullData = getReportData(report.id, {}, liveHistory, farms);
+    const readings = reportReadingsById[report.id];
+    if (readings?.loading) {
+      alert("Report readings are still loading. Please try again shortly.");
+      return;
+    }
+    if (readings?.error || !readings?.data) {
+      alert("Unable to load report readings. Please refresh the page and try again.");
+      return;
+    }
+    const fullData = getReportData(report.id, {}, liveHistory, farms, undefined, readings.data);
 
     if (!fullData) {
       alert("No data available to export for this report yet.");

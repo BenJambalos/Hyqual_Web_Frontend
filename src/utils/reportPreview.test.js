@@ -42,7 +42,8 @@ describe("report date periods", () => {
     );
 
     expect(report.dateRange).toBe("November 4, 2026");
-    expect(report.farms[0].ponds[0].parameters[0].weeklyAvg).toBe("25.00 °C");
+    expect(report.farms[0].ponds[0].parameters[0].average).toBe("25.00 °C");
+    expect(report.averageLabel).toBe("Daily Avg");
   });
 
   it("calculates each pond's weekly average from its own readings", () => {
@@ -60,7 +61,48 @@ describe("report date periods", () => {
       now,
     );
 
-    expect(report.farms[0].ponds.map((pond) => pond.parameters[0].weeklyAvg))
+    expect(report.farms[0].ponds.map((pond) => pond.parameters[0].average))
       .toEqual(["25.00 °C", "35.00 °C"]);
+  });
+
+  it("uses complete backend period aggregates instead of capped live history", () => {
+    const report = getReportData(
+      1,
+      {},
+      [{ pondId: 3, createdAt: "2026-11-04T06:00:00", temp: 25 }],
+      [{ id: 2, name: "Farm", ponds: [{ id: 3, name: "Pond" }] }],
+      now,
+      {
+        ponds: [{
+          pondId: "3",
+          temperature: { average: 27.5, min: 20, max: 35, count: 100 },
+          ph: { average: null, min: null, max: null, count: 0 },
+          dissolvedOxygen: { average: 6, min: 5, max: 7, count: 2 },
+          salinity: { average: 12, min: 11, max: 13, count: 2 },
+        }],
+        incidents: [{
+          pondId: "3",
+          parameter: "temperature",
+          value: 20,
+          recordedAt: "2026-11-03T08:00:00.000Z",
+        }],
+      },
+    );
+
+    expect(report.averageLabel).toBe("Weekly Avg");
+    expect(report.farms[0].ponds[0].parameters[0]).toMatchObject({
+      sampleCount: 100,
+      average: "27.50 °C",
+      min: "20.00 °C",
+      max: "35.00 °C",
+      status: "normal",
+    });
+    expect(report.farms[0].ponds[0].parameters[1]).toMatchObject({
+      average: "—",
+      min: "—",
+      max: "—",
+      status: "offline",
+    });
+    expect(report.farms[0].ponds[0].incidents).toHaveLength(1);
   });
 });

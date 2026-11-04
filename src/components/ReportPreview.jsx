@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import logoIcon from "../assets/hyqual-logo-icon.png";
 import { getReportData } from "../utils/reportPreview";
-import { useLiveReading } from "../hooks/useLiveReading";
+import { useReportReadings } from "../hooks/useReportReadings";
 import { useFarms } from "../hooks/useFarms";
 import "./ReportPreview.css";
 
@@ -12,16 +12,16 @@ const statusLabel = { normal: "NORMAL", moderate: "MODERATE", critical: "CRITICA
 // just that farm/pond instead of every farm. Leave undefined for the full report.
 function ReportPreview({ reportId, scope, onClose, farmData }) {
   const [farmIndex, setFarmIndex] = useState(0);
-  const { history: liveHistory } = useLiveReading();
+  const { data: reportReadings, loading: readingsLoading, error: readingsError } = useReportReadings(reportId);
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
-  const report = getReportData(reportId, scope, liveHistory, farmData ?? farms);
+  const report = getReportData(reportId, scope, [], farmData ?? farms, undefined, reportReadings);
 
-  if (farmsLoading && !farmData) {
+  if ((farmsLoading && !farmData) || readingsLoading) {
     return <div className="report-preview-wrapper"><p>Loading report data...</p></div>;
   }
 
-  if (farmsError && !farmData) {
-    return <div className="report-preview-wrapper"><p>Unable to load report data.</p></div>;
+  if ((farmsError && !farmData) || readingsError) {
+    return <div className="report-preview-wrapper"><p>Unable to load report data. Please retry.</p></div>;
   }
 
   if (!report) {
@@ -141,7 +141,8 @@ function ReportPreview({ reportId, scope, onClose, farmData }) {
               <thead>
                 <tr>
                   <th>Monitored Parameter</th>
-                  <th>Weekly Avg</th>
+                  <th>Samples</th>
+                  <th>{report.averageLabel}</th>
                   <th>Minimum Record</th>
                   <th>Maximum Record</th>
                   <th>Status</th>
@@ -151,7 +152,8 @@ function ReportPreview({ reportId, scope, onClose, farmData }) {
                 {pond.parameters.map((p) => (
                   <tr key={p.parameter}>
                     <td>{p.parameter}</td>
-                    <td>{p.weeklyAvg}</td>
+                    <td>{p.sampleCount}</td>
+                    <td>{p.average}</td>
                     <td>{p.min}</td>
                     <td>{p.max}</td>
                     <td>

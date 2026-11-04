@@ -16,7 +16,8 @@ function flattenComplianceRows(report) {
           location: farm.location,
           pond: pond.pondName,
           parameter: param.parameter,
-          weeklyAvg: param.weeklyAvg,
+          sampleCount: param.sampleCount,
+          average: param.average,
           min: param.min,
           max: param.max,
           status: param.status,
@@ -109,8 +110,8 @@ export function exportReportAsPDF(report) {
     farm.ponds.forEach((pond) => {
       autoTable(doc, {
         startY: y + 3,
-        head: [[pond.pondName, "Weekly Avg", "Min", "Max", "Status"]],
-        body: pond.parameters.map((p) => [p.parameter, p.weeklyAvg, p.min, p.max, p.status.toUpperCase()]),
+        head: [[pond.pondName, "Samples", report.averageLabel, "Min", "Max", "Status"]],
+        body: pond.parameters.map((p) => [p.parameter, p.sampleCount, p.average, p.min, p.max, p.status.toUpperCase()]),
         headStyles: { fillColor: [55, 65, 81] },
         styles: { fontSize: 8 },
         margin: { left: 14, right: 14 },
@@ -153,9 +154,9 @@ export function exportReportAsCSV(report) {
   csv += `Generated,${escape(report.generatedDate)},Prepared for,${escape(report.preparedFor)},Report ID,${escape(report.reportId)}\n\n`;
 
   csv += "PARAMETER COMPLIANCE\n";
-  csv += ["Farm", "Owner", "Location", "Pond", "Parameter", "Weekly Avg", "Min", "Max", "Status"].map(escape).join(",") + "\n";
+  csv += ["Farm", "Owner", "Location", "Pond", "Parameter", "Samples", report.averageLabel, "Min", "Max", "Status"].map(escape).join(",") + "\n";
   complianceRows.forEach((r) => {
-    csv += [r.farm, r.owner, r.location, r.pond, r.parameter, r.weeklyAvg, r.min, r.max, r.status].map(escape).join(",") + "\n";
+    csv += [r.farm, r.owner, r.location, r.pond, r.parameter, r.sampleCount, r.average, r.min, r.max, r.status].map(escape).join(",") + "\n";
   });
 
   if (incidentRows.length > 0) {
@@ -179,7 +180,8 @@ export function exportReportAsXLSX(report) {
     Location: r.location,
     Pond: r.pond,
     Parameter: r.parameter,
-    "Weekly Avg": r.weeklyAvg,
+    Samples: r.sampleCount,
+    [report.averageLabel]: r.average,
     Min: r.min,
     Max: r.max,
     Status: r.status.toUpperCase(),

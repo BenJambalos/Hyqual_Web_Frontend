@@ -11,6 +11,7 @@ import { exportReport } from "../utils/reportExport";
 import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { useAlerts } from "../hooks/useAlerts";
+import { useReportReadings } from "../hooks/useReportReadings";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 import { useDeviceStatus } from "../hooks/useDeviceStatus";
 import { buildReportBlob, formatFileSize } from "../utils/reportExport";
@@ -43,6 +44,8 @@ function PondDetails() {
   // Always call hooks unconditionally (React rule) — safe even before the
   // farm/pond-not-found check below, since useLiveReading doesn't depend on them.
   const { reading: liveReading, history: liveHistory, loading: liveLoading, error: readingsError } = useLiveReading(pondId);
+  const weeklyReportReadings = useReportReadings(1);
+  const dailyReportReadings = useReportReadings(3);
   const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { alerts, loading: alertsLoading, error: alertsError } = useAlerts();
@@ -110,7 +113,23 @@ function PondDetails() {
 
   const handleDownloadReport = (report) => {
     const format = "PDF";
-    const scopedData = getReportData(report.id, { farmId: farm.id, pondId: pond.id }, liveHistory, farms);
+    const readings = report.id === 1 ? weeklyReportReadings : dailyReportReadings;
+    if (readings.loading) {
+      alert("Report readings are still loading. Please try again shortly.");
+      return;
+    }
+    if (readings.error || !readings.data) {
+      alert("Unable to load report readings. Please refresh the page and try again.");
+      return;
+    }
+    const scopedData = getReportData(
+      report.id,
+      { farmId: farm.id, pondId: pond.id },
+      liveHistory,
+      farms,
+      undefined,
+      readings.data,
+    );
 
     if (!scopedData || scopedData.farms.length === 0) {
       alert("No data available to export for this pond in this report's date range.");
@@ -285,14 +304,17 @@ function PondDetails() {
                     </div>
 
                     {summaryReports.map((report) => {
+                      const readings = report.id === 1 ? weeklyReportReadings : dailyReportReadings;
                       const data = getReportData(
                         report.id,
                         { farmId: farm.id, pondId: pond.id },
-                        liveHistory,
+                        [],
                         farms,
+                        undefined,
+                        readings.data,
                       );
-                      const dateRange = data?.dateRange || "—";
-                      const size = data
+                      const dateRange = readings.loading ? "Loading..." : data?.dateRange || "—";
+                      const size = readings.loading ? "Loading..." : data
                         ? formatFileSize(buildReportBlob(data, "PDF").size)
                         : "—";
 

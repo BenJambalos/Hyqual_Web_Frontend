@@ -8,10 +8,10 @@ const REPORT_DEFINITIONS = {
 };
 
 const paramMeta = {
-  temperature: { label: "Water Temperature", unit: "°C", key: "temperature", thresholdKey: "temp" },
-  phLevel: { label: "pH Level", unit: "", key: "phLevel", thresholdKey: "ph" },
-  dissolvedOxygen: { label: "Dissolved Oxygen (DO)", unit: "mg/L", key: "dissolvedOxygen", thresholdKey: "do" },
-  salinity: { label: "Salinity", unit: "ppt", key: "salinity", thresholdKey: "sal" },
+  temperature: { label: "Water Temperature", unit: "°C", key: "temperature", apiKey: "temperature", thresholdKey: "temp" },
+  phLevel: { label: "pH Level", unit: "", key: "phLevel", apiKey: "ph", thresholdKey: "ph" },
+  dissolvedOxygen: { label: "Dissolved Oxygen (DO)", unit: "mg/L", key: "dissolvedOxygen", apiKey: "dissolvedOxygen", thresholdKey: "do" },
+  salinity: { label: "Salinity", unit: "ppt", key: "salinity", apiKey: "salinity", thresholdKey: "sal" },
 };
 
 function average(values) {
@@ -91,46 +91,64 @@ export function getReportPeriod(reportId, now = new Date()) {
     };
 }
 
-function buildPondReport(pond, liveHistory = []) {
+function buildPondReport(pond, liveHistory = [], aggregatePond, aggregateData) {
   const pondHistory = liveHistory.filter((row) => String(row.pondId) === String(pond.id));
   const rows = liveRowsToReportRows(pondHistory);
 
   const parameters = Object.values(paramMeta).map((meta) => {
+    const metric = aggregatePond?.[meta.apiKey];
     const values = rows.map((row) => row[meta.key]).filter((value) => value != null);
-    if (values.length === 0) {
-      return { parameter: meta.label, weeklyAvg: "—", min: "—", max: "—", status: "offline" };
+    const averageValue = aggregateData
+      ? metric?.average
+      : values.length ? average(values) : null;
+    const minValue = aggregateData ? metric?.min : values.length ? Math.min(...values) : null;
+    const maxValue = aggregateData ? metric?.max : values.length ? Math.max(...values) : null;
+    const sampleCount = aggregateData ? metric?.count || 0 : values.length;
+    if (averageValue == null) {
+      return { parameter: meta.label, sampleCount, average: "—", min: "—", max: "—", status: "offline" };
     }
 
-    const averageValue = average(values);
     return {
       parameter: meta.label,
-      weeklyAvg: formatValue(averageValue, meta.unit),
-      min: formatValue(Math.min(...values), meta.unit),
-      max: formatValue(Math.max(...values), meta.unit),
+      sampleCount,
+      average: formatValue(averageValue, meta.unit),
+      min: formatValue(minValue, meta.unit),
+      max: formatValue(maxValue, meta.unit),
       status: getParamStatus(meta.thresholdKey, averageValue),
     };
   });
 
   const incidents = [];
-  rows.forEach((row) => {
-    Object.values(paramMeta).forEach((meta) => {
-      if (row[meta.key] == null) return;
-      const status = getParamStatus(meta.thresholdKey, row[meta.key]);
-      if (status !== "normal") {
-        incidents.push({
-          timestamp: row.recordedAt.replace("T", " ").replace("Z", ""),
-          parameter: meta.label,
-          value: formatValue(row[meta.key], meta.unit),
-          description: `${meta.label} reading of ${formatValue(row[meta.key], meta.unit)} flagged ${status}.`,
-        });
-      }
+  const reportIncidents = aggregateData
+    ? (aggregateData.incidents || []).filter((incident) => String(incident.pondId) === String(pond.id))
+    : rows.flatMap((row) => Object.values(paramMeta)
+      .filter((meta) => row[meta.key] != null)
+      .map((meta) => ({
+        parameter: meta.apiKey === "ph" ? "ph" : meta.apiKey,
+        value: row[meta.key],
+        recordedAt: row.recordedAt,
+      }))
+      .filter((incident) => {
+        const meta = Object.values(paramMeta).find((item) => item.apiKey === incident.parameter);
+        return getParamStatus(meta.thresholdKey, incident.value) !== "normal";
+      }));
+  reportIncidents.forEach((incident) => {
+    const meta = Object.values(paramMeta).find((item) => item.apiKey === incident.parameter);
+    if (!meta) return;
+    const status = getParamStatus(meta.thresholdKey, incident.value);
+    const value = formatValue(incident.value, meta.unit);
+    incidents.push({
+      timestamp: incident.recordedAt.replace("T", " ").replace("Z", ""),
+      parameter: meta.label,
+      value,
+      description: `${meta.label} reading of ${value} flagged ${status}.`,
     });
   });
 
   return { pondName: pond.name, parameters, incidents };
 }
 
-export function getReportData(reportId, scope = {}, liveHistory = [], farmData = [], now = new Date()) {
+export function getReportData(reportId, scope = {}, liveHistory = [], farmData = [], now = new Date(), aggregateData = null) {
   const definition = REPORT_DEFINITIONS[reportId];
   if (!definition) return null;
   const period = getReportPeriod(reportId, now);
@@ -144,12 +162,20 @@ export function getReportData(reportId, scope = {}, liveHistory = [], farmData =
   const targetFarms = scope.farmId
     ? farmData.filter((farm) => String(farm.id) === String(scope.farmId))
     : farmData;
+  const aggregateByPond = new Map(
+    (aggregateData?.ponds || []).map((pond) => [String(pond.pondId), pond])
+  );
 
   const farmReports = targetFarms.map((farm) => {
     const targetPonds = scope.pondId
       ? farm.ponds.filter((pond) => String(pond.id) === String(scope.pondId))
       : farm.ponds;
-    const ponds = targetPonds.map((pond) => buildPondReport(pond, periodHistory));
+    const ponds = targetPonds.map((pond) => buildPondReport(
+      pond,
+      periodHistory,
+      aggregateByPond.get(String(pond.id)),
+      aggregateData,
+    ));
     const severity = { normal: 0, moderate: 1, critical: 2, offline: 1 };
     const allStatuses = ponds.flatMap((pond) => pond.parameters.map((parameter) => parameter.status));
     const overallStatus = allStatuses.reduce(
@@ -176,6 +202,7 @@ export function getReportData(reportId, scope = {}, liveHistory = [], farmData =
 
   return {
     title: definition.title,
+    averageLabel: definition.period === "week" ? "Weekly Avg" : "Daily Avg",
     dateRange: period.dateRange,
     generatedDate: period.generatedDate,
     preparedFor: "BFAR Oriental Mindoro",

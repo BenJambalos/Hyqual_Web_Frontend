@@ -3,6 +3,7 @@ import { buildReportBlob, formatFileSize } from "./reportExport";
 
 const report = {
   title: "Daily Summary Report",
+  averageLabel: "Daily Avg",
   dateRange: "November 4, 2026",
   generatedDate: "November 4, 2026",
   preparedFor: "BFAR Oriental Mindoro",
@@ -27,5 +28,31 @@ describe("report export file metadata", () => {
   it("formats file sizes for report cards", () => {
     expect(formatFileSize(512)).toBe("512 B");
     expect(formatFileSize(1536)).toBe("1.5 KB");
+  });
+
+  it("uses the report's daily average label in CSV exports", async () => {
+    const blob = buildReportBlob({
+      ...report,
+      farms: [{
+        farmName: "Farm",
+        owner: "Owner",
+        location: "Location",
+        ponds: [{
+          pondName: "Pond",
+          parameters: [{
+            parameter: "Water Temperature",
+            sampleCount: 4,
+            average: "28.00 °C",
+            min: "26.00 °C",
+            max: "30.00 °C",
+            status: "normal",
+          }],
+          incidents: [],
+        }],
+      }],
+    }, "CSV");
+
+    await expect(blob.text()).resolves.toContain('"Samples","Daily Avg","Min"');
+    await expect(blob.text()).resolves.toContain('"4","28.00 °C"');
   });
 });

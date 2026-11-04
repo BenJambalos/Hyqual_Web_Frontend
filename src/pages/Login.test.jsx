@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, test, vi, beforeEach } from "vitest";
@@ -19,6 +19,7 @@ vi.mock("../api/client", () => ({
 }));
 
 beforeEach(() => {
+  cleanup();
   vi.clearAllMocks();
   localStorage.clear();
   sessionStorage.clear();
@@ -51,7 +52,7 @@ describe("Login page", () => {
 
   test("sends a reset request when the forgot-password flow is submitted", async () => {
     const user = userEvent.setup();
-    api.requestPasswordReset.mockResolvedValue({});
+    api.requestPasswordReset.mockResolvedValue({ token: "reset-token" });
 
     render(
       <MemoryRouter>
@@ -65,6 +66,32 @@ describe("Login page", () => {
 
     expect(api.requestPasswordReset).toHaveBeenCalledWith("user@example.com");
     expect(screen.getByText(/if the account exists, a password reset link will be sent/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open password reset link/i })).toHaveAttribute(
+      "href",
+      `${window.location.origin}/reset-password?token=reset-token`
+    );
+  });
+
+  test("shows a sending state until the reset request finishes", async () => {
+    const user = userEvent.setup();
+    let finishRequest;
+    api.requestPasswordReset.mockReturnValue(new Promise((resolve) => {
+      finishRequest = resolve;
+    }));
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole("button", { name: /forgot password\?/i }));
+    await user.type(screen.getByLabelText(/email address/i), "user@example.com");
+    await user.click(screen.getByRole("button", { name: /send reset link/i }));
+
+    expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
+    finishRequest({});
+    expect(await screen.findByRole("status")).toHaveTextContent(/if the account exists/i);
   });
 
   test("blocks non-superadmin users from superadmin routes", async () => {

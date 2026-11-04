@@ -18,6 +18,8 @@ function Login() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetError, setResetError] = useState("");
   const [resetMessage, setResetMessage] = useState("");
+  const [resetLink, setResetLink] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
   const isSigningIn = useRef(false);
 
@@ -71,6 +73,7 @@ function Login() {
     e.preventDefault();
     setResetError("");
     setResetMessage("");
+    setResetLink("");
 
     const trimmedEmail = resetEmail.trim();
 
@@ -79,13 +82,21 @@ function Login() {
       return;
     }
 
+    setIsSendingReset(true);
     try {
-      await api.requestPasswordReset(trimmedEmail);
+      const result = await api.requestPasswordReset(trimmedEmail);
       setResetMessage("If the account exists, a password reset link will be sent to the email address.");
+      if (result.token) {
+        const resetUrl = new URL("/reset-password", window.location.origin);
+        resetUrl.searchParams.set("token", result.token);
+        setResetLink(resetUrl.toString());
+      }
       setResetEmail("");
     } catch (err) {
       console.error("Password reset error:", err);
       setResetError(err.message || "Unable to send reset email. Please try again.");
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -93,6 +104,7 @@ function Login() {
     setIsResetMode(true);
     setResetError("");
     setResetMessage("");
+    setResetLink("");
     setEmail("");
   };
 
@@ -100,6 +112,7 @@ function Login() {
     setIsResetMode(false);
     setResetError("");
     setResetMessage("");
+    setResetLink("");
     setResetEmail("");
   };
 
@@ -178,11 +191,16 @@ function Login() {
                 required
               />
 
-              {resetError && <p className="login-error">{resetError}</p>}
-              {resetMessage && <p className="login-success">{resetMessage}</p>}
+              {resetError && <p className="login-error" role="alert">{resetError}</p>}
+              {resetMessage && <p className="login-success" role="status">{resetMessage}</p>}
+              {resetLink && (
+                <a className="forgot-password" href={resetLink}>
+                  Open password reset link
+                </a>
+              )}
 
-              <button type="submit" className="sign-in-btn reset-btn">
-                Send Reset Link
+              <button type="submit" className="sign-in-btn reset-btn" disabled={isSendingReset}>
+                {isSendingReset ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
 
