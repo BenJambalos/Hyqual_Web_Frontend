@@ -10,9 +10,12 @@ import { getReportData } from "../utils/reportPreview";
 import { buildReportBlob, exportReport, formatFileSize } from "../utils/reportExport";
 import { useFarms } from "../hooks/useFarms";
 import { useLiveReading } from "../hooks/useLiveReading";
-import ReportsSection from "../components/ReportsSection";
-import { buildAnalytics } from "../utils/reportAnalytics";
-import { useMlAnalytics } from "../hooks/useMlAnalytics";
+import {
+  buildAnalytics,
+  filterHistoryByDateRange,
+  formatDateRange,
+  getHistoryDateRange,
+} from "../utils/reportAnalytics";
 import { useReportReadings } from "../hooks/useReportReadings";
 
 const statusFilters = ["All", "Normal", "Critical", "Warning", "Offline"];
@@ -22,22 +25,30 @@ const filterKeyMap = { Normal: "normal", Critical: "critical", Warning: "warning
 function ReportsAnalytics() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [showDateModal, setShowDateModal] = useState(false);
-  const [, setCustomRange] = useState(null);
+  const [customRange, setCustomRange] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [previewReportId, setPreviewReportId] = useState(null);
+  const [selectedFarmId, setSelectedFarmId] = useState("all");
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { history: liveHistory } = useLiveReading();
   const weeklyReadings = useReportReadings(1);
   const dailyReadings = useReportReadings(3);
   const reportReadingsById = { 1: weeklyReadings, 3: dailyReadings };
-  const { counts: mlCounts, riskResults, forecasts, forecastEvaluationSamples, mlJobRuns, loading: mlLoading, error: mlError } = useMlAnalytics();
-  const { trend: trendData, distribution: statusDistribution } = buildAnalytics(liveHistory);
+  const { trend: allTrendData, distribution: statusDistribution } = buildAnalytics(liveHistory);
+  const trendData = customRange
+    ? buildAnalytics(filterHistoryByDateRange(liveHistory, customRange)).trend
+    : allTrendData;
+  const displayedRange = customRange || getHistoryDateRange(liveHistory);
+  const dateRangeLabel = displayedRange
+    ? formatDateRange(displayedRange.from, displayedRange.to)
+    : "No readings";
   const [selectedFormats, setSelectedFormats] = useState(
     Object.fromEntries(summaryReports.map((r) => [r.id, r.defaultFormat]))
   );
+  const reportScope = selectedFarmId === "all" ? {} : { farmId: selectedFarmId };
   const reportMetadata = Object.fromEntries(summaryReports.map((report) => {
     const readings = reportReadingsById[report.id];
-    const data = readings?.data && getReportData(report.id, {}, [], farms, undefined, readings.data);
+    const data = readings?.data && getReportData(report.id, reportScope, [], farms, undefined, readings.data);
     return [report.id, {
       dateRange: data?.dateRange || (readings?.loading ? "Loading..." : readings?.error ? "Unable to load" : "—"),
       size: data ? formatFileSize(buildReportBlob(data, selectedFormats[report.id]).size) : "—",
@@ -74,7 +85,7 @@ function ReportsAnalytics() {
       alert("Unable to load report readings. Please refresh the page and try again.");
       return;
     }
-    const fullData = getReportData(report.id, {}, liveHistory, farms, undefined, readings.data);
+    const fullData = getReportData(report.id, reportScope, liveHistory, farms, undefined, readings.data);
 
     if (!fullData) {
       alert("No data available to export for this report yet.");
@@ -91,7 +102,12 @@ function ReportsAnalytics() {
       <main className="dashboard-main">
         {farmsLoading ? <p style={{ padding: 40 }}>Loading farms...</p> : farmsError ? <p style={{ padding: 40 }}>Unable to load farms.</p> : (
         previewReportId ? (
-          <ReportPreview reportId={previewReportId} farmData={farms} onClose={() => setPreviewReportId(null)} />
+          <ReportPreview
+            reportId={previewReportId}
+            scope={reportScope}
+            farmData={farms}
+            onClose={() => setPreviewReportId(null)}
+          />
         ) : (
           <>
             <div className="dashboard-header">
@@ -119,30 +135,37 @@ function ReportsAnalytics() {
                     <h3>Overall Water Quality Risk Trend</h3>
                     <p>Aggregated across all monitored farms</p>
                   </div>
-                  <button className="icon-btn" onClick={() => setShowDateModal(true)}>
-                    <Calendar size={16} />
-                  </button>
+                  <div className="trend-date-control">
+                    <span className="trend-date-range">{dateRangeLabel}</span>
+                    <button className="icon-btn" aria-label="Select trend date range" onClick={() => setShowDateModal(true)}>
+                      <Calendar size={16} />
+                    </button>
+                  </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={trendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                    <Tooltip />
-                    {activeChartKeys.map((key) => (
-                      <Area
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={statusDistribution.find((status) => status.key === key)?.color}
-                        fill={statusDistribution.find((status) => status.key === key)?.color}
-                        fillOpacity={0.15}
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
+                {trendData.length ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={trendData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                      <Tooltip />
+                      {activeChartKeys.map((key) => (
+                        <Area
+                          key={key}
+                          type="monotone"
+                          dataKey={key}
+                          stroke={statusDistribution.find((status) => status.key === key)?.color}
+                          fill={statusDistribution.find((status) => status.key === key)?.color}
+                          fillOpacity={0.15}
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="chart-empty-note">No readings in this date range.</p>
+                )}
               </div>
 
               <div className="distribution-card">
@@ -165,19 +188,23 @@ function ReportsAnalytics() {
               </div>
             </div>
 
-            <ReportsSection
-              mlData={{ riskResults, forecasts }}
-              mlCounts={mlCounts}
-              evaluationData={{
-                arimaSamples: forecastEvaluationSamples || [],
-                reliability: mlJobRuns || [],
-              }}
-              mlLoading={mlLoading}
-              mlError={mlError}
-            />
-
             <div className="summary-reports-card">
-              <h3>Summary reports</h3>
+              <div className="summary-reports-header">
+                <h3>Summary reports</h3>
+                <label className="summary-farm-filter">
+                  <span>Farm</span>
+                  <select
+                    aria-label="Filter summary reports by farm"
+                    value={selectedFarmId}
+                    onChange={(event) => setSelectedFarmId(event.target.value)}
+                  >
+                    <option value="all">All farms</option>
+                    {farms.map((farm) => (
+                      <option key={farm.id} value={farm.id}>{farm.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
               {summaryReports.map((report) => (
                 <div className="report-item" key={report.id}>
@@ -234,6 +261,7 @@ function ReportsAnalytics() {
       {showDateModal && (
         <DateRangeModal
           onClose={() => setShowDateModal(false)}
+          initialRange={customRange || getHistoryDateRange(liveHistory)}
           onApply={(from, to) => setCustomRange({ from, to })}
         />
       )}

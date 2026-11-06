@@ -105,4 +105,31 @@ describe("report date periods", () => {
     });
     expect(report.farms[0].ponds[0].incidents).toHaveLength(1);
   });
+
+  it("scopes a summary report to one farm while retaining every pond on that farm", () => {
+    const farms = [
+      {
+        id: "farm-a",
+        name: "Farm A",
+        ponds: [{ id: "pond-1", name: "Pond 1" }, { id: "pond-2", name: "Pond 2" }],
+      },
+      {
+        id: "farm-b",
+        name: "Farm B",
+        ponds: [{ id: "pond-3", name: "Pond 3" }],
+      },
+    ];
+    const report = getReportData(
+      1,
+      { farmId: "farm-a" },
+      [],
+      farms,
+      now,
+      { ponds: [], incidents: [] },
+    );
+
+    expect(report.farms.map((farm) => farm.farmName)).toEqual(["Farm A"]);
+    expect(report.farms[0].ponds.map((pond) => pond.pondName)).toEqual(["Pond 1", "Pond 2"]);
+    expect(report.isScoped).toBe(true);
+  });
 });

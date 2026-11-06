@@ -42,6 +42,18 @@
   margin-bottom: 12px;
 }
 
+.trend-date-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trend-date-range {
+  color: #687771;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .chart-card-header h3 {
   font-size: 15px;
   color: #111827;
@@ -84,10 +96,37 @@
   border-radius: 999px;
 }
 
+.summary-reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
 .summary-reports-card h3 {
   font-size: 15px;
   color: #111827;
-  margin-bottom: 8px;
+  margin: 0;
+}
+
+.summary-farm-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.summary-farm-filter select {
+  max-width: min(280px, 55vw);
+  padding: 8px 30px 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font: inherit;
 }
 
 .report-item {

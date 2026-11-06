@@ -18,6 +18,7 @@ function formatNumber(value, suffix = "") {
   return value == null ? "—" : `${value.toFixed(2)}${suffix}`;
 }
 
+// Preserved backup of the evaluation section previously shown on Reports & Analytics.
 function ReportsSection({
   evaluationData = {},
   mlData = {},

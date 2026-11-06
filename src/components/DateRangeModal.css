@@ -25,6 +25,12 @@
   margin-bottom: 16px;
 }
 
+.date-range-error {
+  margin: 0 0 12px;
+  color: #b91c1c;
+  font-size: 12px;
+}
+
 .apply-btn {
   width: 100%;
   background: linear-gradient(90deg, #0d5c46 0%, #34b878 100%);

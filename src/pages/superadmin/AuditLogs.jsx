@@ -16,6 +16,11 @@ const timeFilters = [
 ];
 
 const iconByType = { signin: LogIn, export: FileText, account: UserPlus, device: Cpu };
+const actionLabels = {
+  profile_updated: "edited a profile",
+  farm_updated: "edited a farm",
+  pond_updated: "edited a pond",
+};
 
 function getLogDate(log, now) {
   if (log.createdAt?.toDate) return log.createdAt.toDate();
@@ -78,7 +83,7 @@ function AuditLogs() {
       formatLogDate(log, now),
       log.actor,
       log.actorRole,
-      log.action,
+      actionLabels[log.action] || log.action,
       log.detail,
     ]);
     const csv = [columns, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\r\n");
@@ -139,7 +144,7 @@ function AuditLogs() {
                   <Icon size={16} />
                 </span>
                 <p className="al-text">
-                  <strong>{log.actor || "User"}</strong>{log.actorRole ? ` (${log.actorRole})` : ""} · {log.action}{" "}
+                  <strong>{log.actor || "User"}</strong>{log.actorRole ? ` (${log.actorRole})` : ""} · {actionLabels[log.action] || log.action}{" "}
                   <strong>{log.detail}</strong>
                 </p>
                 <span className="al-time">{formatLogDate(log, now)}</span>
