@@ -4,18 +4,16 @@ import {
   Activity, MapPin, AlertTriangle,
   Building2, WifiOff, CheckSquare, AlertCircle, Layers,
 } from "lucide-react";
-import { getOverallStatus } from "../utils/thresholds";
 import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { useCollection } from "../hooks/useCollection";
+import { buildOfflineDeviceAlerts, getFarmMonitoringStatus } from "../utils/monitoringStatus";
 import {
-  buildReadingAlerts,
-  getAlertDateKey,
   getAlertTimestamp,
   normalizeStoredAlerts,
+  reconcileReadingAlerts,
 } from "../utils/alertHelpers";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
-import { useDeviceStatus } from "../hooks/useDeviceStatus";
 import { markAlertSeen } from "../utils/seenAlerts";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import "./Dashboard.css";
@@ -37,7 +35,6 @@ function Dashboard() {
   const [showOverlay, setShowOverlay] = useState(true);
   const [statusFilter, setStatusFilter] = useState(null);
   const { reading: liveReading, history: liveHistory } = useLiveReading();
-  const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { items: storedAlertItems, loading: alertsLoading, error: alertsError } = useCollection("alerts");
 
@@ -45,16 +42,15 @@ function Dashboard() {
   if (farmsError || alertsError) return <p style={{ padding: 40 }}>Unable to load dashboard data.</p>;
 
   const farmsWithStatus = farms.filter((farm) => farm.ponds.length > 0).map((farm) => {
-    const mainPond = farm.ponds[0];
-    const isLivePond = String(farm.id) === String(LIVE_DEVICE_TARGET.farmId) && mainPond.id === LIVE_DEVICE_TARGET.pondId;
-    const readings = isLivePond && liveReading
-      ? liveReading
-      : { temp: mainPond.temp, ph: mainPond.ph, do: mainPond.do, sal: mainPond.sal };
-    const qualityStatus = getOverallStatus({
-      temp: readings.temp, ph: readings.ph, do: readings.do, sal: readings.sal,
-    });
-    const deviceOffline = isLivePond && deviceStatusReady && !deviceOnline;
-    return { ...farm, status: deviceOffline ? "offline" : qualityStatus };
+    const readingsByPond = new Map(farm.ponds.map((pond) => {
+      const isLivePond = String(farm.id) === String(LIVE_DEVICE_TARGET.farmId)
+        && pond.id === LIVE_DEVICE_TARGET.pondId;
+      return [String(pond.id), isLivePond && liveReading ? liveReading : pond];
+    }));
+    return {
+      ...farm,
+      status: getFarmMonitoringStatus(farm.ponds, readingsByPond),
+    };
   });
 
   const dashboardStats = {
@@ -66,21 +62,9 @@ function Dashboard() {
     moderate: farmsWithStatus.filter((farm) => farm.status === "moderate").length,
   };
 
-  const now = new Date();
   const alerts = [
-    ...buildReadingAlerts(liveHistory, farms),
-    ...(deviceStatusReady && !deviceOnline ? [{
-      id: "device-offline",
-      farmId: LIVE_DEVICE_TARGET.farmId,
-      pondId: LIVE_DEVICE_TARGET.pondId,
-      farmName: farms.find((farm) => String(farm.id) === String(LIVE_DEVICE_TARGET.farmId))?.name ?? "",
-      status: "offline",
-      message: "Monitoring device is offline and is not sending readings.",
-      displayTime: "Now",
-      date: getAlertDateKey(now),
-      daysAgo: 0,
-      createdAt: now.toISOString(),
-    }] : []),
+    ...reconcileReadingAlerts(liveHistory, farms),
+    ...buildOfflineDeviceAlerts(farms),
     ...normalizeStoredAlerts(storedAlertItems, farms),
   ].sort((a, b) => (getAlertTimestamp(b.createdAt)?.getTime() ?? 0)
     - (getAlertTimestamp(a.createdAt)?.getTime() ?? 0));
@@ -91,7 +75,7 @@ function Dashboard() {
     status: String(alert.status ?? "moderate").toLowerCase(),
     farm: alert.farmName,
     detail: alert.message,
-    action: alert.action ?? "Review the latest reading.",
+    action: alert.isResolved ? "Condition returned to normal." : alert.action ?? "Review the latest reading.",
     time: alert.displayTime,
   }));
   const handleWarningSeen = (alertId) => {
@@ -239,6 +223,7 @@ function Dashboard() {
                   </div>
                   <p className="warning-farm">{w.farm}</p>
                   <p className="warning-detail">{w.detail}</p>
+                  {w.isResolved && <p className="warning-action">Resolved</p>}
                   <p className="warning-action">Action: {w.action}</p>
                   <p className="warning-time">{w.time}</p>
                 </div>

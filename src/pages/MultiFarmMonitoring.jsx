@@ -1,22 +1,39 @@
 import { useState } from "react";
 import { Search, Waves } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import { getOverallStatus, getParamStatus } from "../utils/thresholds";
+import { getParamStatus } from "../utils/thresholds";
 import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
-import { useDeviceStatus } from "../hooks/useDeviceStatus";
+import { getFarmMonitoringStatus } from "../utils/monitoringStatus";
 import "./MultiFarmMonitoring.css";
 import { useNavigate } from "react-router-dom";
 
 const statusLabel = { normal: "Normal", critical: "Critical", moderate: "Moderate", offline: "Offline" };
+
+function formatUpdatedAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    }).formatToParts(date).map(({ type, value: part }) => [type, part]),
+  );
+
+  return `${parts.month}. ${parts.day}, ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} ${parts.dayPeriod}`;
+}
 
 function MultiFarmMonitoring() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { reading: liveReading } = useLiveReading();
-  const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
 
   if (farmsLoading) return <p style={{ padding: 40 }}>Loading farms...</p>;
@@ -26,13 +43,15 @@ function MultiFarmMonitoring() {
   // This is what makes the colors dynamic instead of hardcoded.
   const farmsWithStatus = farms.filter((farm) => farm.ponds.length > 0).map((farm) => {
     const mainPond = farm.ponds[0];
-    const isLivePond = String(farm.id) === String(LIVE_DEVICE_TARGET.farmId) && mainPond.id === LIVE_DEVICE_TARGET.pondId;
-    const readings = isLivePond && liveReading
-      ? liveReading
-      : { temp: mainPond.temp, ph: mainPond.ph, do: mainPond.do, sal: mainPond.sal };
+    const readingsByPond = new Map(farm.ponds.map((pond) => {
+      const isLivePond = String(farm.id) === String(LIVE_DEVICE_TARGET.farmId)
+        && pond.id === LIVE_DEVICE_TARGET.pondId;
+      return [String(pond.id), isLivePond && liveReading ? liveReading : pond];
+    }));
+    const readings = readingsByPond.get(String(mainPond.id));
     return {
       ...farm,
-      status: isLivePond && deviceStatusReady && !deviceOnline ? "offline" : getOverallStatus(readings),
+      status: getFarmMonitoringStatus(farm.ponds, readingsByPond),
       readings,
     };
   });
@@ -131,7 +150,7 @@ function MultiFarmMonitoring() {
               </div>
 
               <div className="farm-card-footer">
-                <span className="updated-text">Updated {farm.updatedAt}</span>
+                <span className="updated-text">Updated {formatUpdatedAt(farm.updatedAt)}</span>
                 <span className="open-farm-link" onClick={(e) => {e.stopPropagation(); navigate(`/multi-farm/${farm.id}`);}}>
             Open farm →
           </span>

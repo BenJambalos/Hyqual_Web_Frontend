@@ -97,6 +97,7 @@ function Alerts() {
                   <span className={"status-pill status-pill-" + alert.status}>
                     {statusLabel[alert.status]}
                   </span>
+                  {alert.isResolved && <span className="alert-resolved-label">Resolved</span>}
                 </div>
                 <p className="alert-message">
                   {alert.message}
@@ -132,6 +133,13 @@ function Alerts() {
                 {selectedAlert.trend && <> -<strong>{selectedAlert.trend}</strong></>}
               </p>
               <p className="alert-modal-time">{selectedAlert.displayTime}</p>
+              {selectedAlert.isResolved && (
+                <p className="alert-modal-time">
+                  {selectedAlert.resolvedAt
+                    ? `Resolved: ${new Date(selectedAlert.resolvedAt).toLocaleString()}`
+                    : "Resolved"}
+                </p>
+              )}
 
               <div className="alert-modal-footer">
                 <span

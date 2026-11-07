@@ -1,11 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Sprout } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import { getOverallStatus } from "../utils/thresholds";
 import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
-import { useDeviceStatus } from "../hooks/useDeviceStatus";
+import { getFarmMonitoringStatus, getPondMonitoringStatus } from "../utils/monitoringStatus";
 import "./FarmDetails.css";
 
 const statusLabel = { normal: "Normal", critical: "Critical", moderate: "Moderate", offline: "Offline" };
@@ -14,7 +13,6 @@ function FarmDetails() {
   const { farmId } = useParams();
   const navigate = useNavigate();
   const { reading: liveReading, loading: liveLoading } = useLiveReading();
-  const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
 
   if (farmsLoading) return <p style={{ padding: 40 }}>Loading farm...</p>;
@@ -24,15 +22,12 @@ function FarmDetails() {
 
   if (!farm || farm.ponds.length === 0) return <p style={{ padding: 40 }}>Farm not found or has no ponds.</p>;
 
-  const mainPond = farm.ponds[0];
   const isLiveFarm = String(farm.id) === String(LIVE_DEVICE_TARGET.farmId);
-  const mainPondReadings = isLiveFarm && mainPond.id === LIVE_DEVICE_TARGET.pondId && liveReading
-    ? liveReading
-    : mainPond;
-  const qualityStatus = getOverallStatus({
-    temp: mainPondReadings.temp, ph: mainPondReadings.ph, do: mainPondReadings.do, sal: mainPondReadings.sal,
-  });
-  const overallStatus = isLiveFarm && deviceStatusReady && !deviceOnline ? "offline" : qualityStatus;
+  const readingsByPond = new Map(farm.ponds.map((pond) => {
+    const isLivePond = isLiveFarm && pond.id === LIVE_DEVICE_TARGET.pondId;
+    return [String(pond.id), isLivePond && liveReading ? liveReading : pond];
+  }));
+  const overallStatus = getFarmMonitoringStatus(farm.ponds, readingsByPond);
 
   return (
     <div className="dashboard-layout">
@@ -64,11 +59,8 @@ function FarmDetails() {
         <div className="ponds-grid">
           {farm.ponds.map((pond) => {
             const isLivePond = isLiveFarm && pond.id === LIVE_DEVICE_TARGET.pondId;
-            const pondReadings = isLivePond && liveReading ? liveReading : pond;
-            const qualityStatus = getOverallStatus({
-              temp: pondReadings.temp, ph: pondReadings.ph, do: pondReadings.do, sal: pondReadings.sal,
-            });
-            const pondStatus = isLivePond && deviceStatusReady && !deviceOnline ? "offline" : qualityStatus;
+            const pondReadings = readingsByPond.get(String(pond.id));
+            const pondStatus = getPondMonitoringStatus(pond, pondReadings);
             return (
               <div
                 className={"pond-card pond-card-" + pondStatus}

@@ -2,46 +2,26 @@ import { useMemo } from "react";
 import { useCollection } from "./useCollection";
 import { useFarms } from "./useFarms";
 import { useLiveReading } from "./useLiveReading";
-import { useDeviceStatus } from "./useDeviceStatus";
-import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
+import { buildOfflineDeviceAlerts } from "../utils/monitoringStatus";
 import {
-  buildReadingAlerts,
-  getAlertDateKey,
   getAlertTimestamp,
   normalizeStoredAlerts,
+  reconcileReadingAlerts,
 } from "../utils/alertHelpers";
 
 export function useAlerts() {
   const { items, loading: alertsLoading, error: alertsError } = useCollection("alerts");
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { history } = useLiveReading();
-  const { statusReady, deviceOnline } = useDeviceStatus();
-
-  const alerts = useMemo(() => {
-    const storedAlerts = normalizeStoredAlerts(items, farms);
-    const generatedAlerts = buildReadingAlerts(history, farms);
-    const now = new Date();
-    const offlineAlerts = statusReady && !deviceOnline ? [{
-      id: "device-offline",
-      farmId: LIVE_DEVICE_TARGET.farmId,
-      pondId: LIVE_DEVICE_TARGET.pondId,
-      farmName: farms.find((farm) => String(farm.id) === String(LIVE_DEVICE_TARGET.farmId))?.name ?? "",
-      pond: LIVE_DEVICE_TARGET.pondId,
-      status: "offline",
-      riskLabel: "Communication",
-      parameter: "Device",
-      message: "Monitoring device is offline and is not sending readings.",
-      trend: "No current data",
-      displayTime: "Now",
-      date: getAlertDateKey(now),
-      daysAgo: 0,
-      createdAt: now.toISOString(),
-    }] : [];
-
-    return [...generatedAlerts, ...offlineAlerts, ...storedAlerts]
-      .sort((a, b) => (getAlertTimestamp(b.createdAt)?.getTime() ?? 0)
-        - (getAlertTimestamp(a.createdAt)?.getTime() ?? 0));
-  }, [items, farms, history, statusReady, deviceOnline]);
+  const offlineAlerts = useMemo(
+    () => farmsLoading ? [] : buildOfflineDeviceAlerts(farms),
+    [farms, farmsLoading],
+  );
+  const storedAlerts = normalizeStoredAlerts(items, farms);
+  const generatedAlerts = reconcileReadingAlerts(history, farms);
+  const alerts = [...generatedAlerts, ...offlineAlerts, ...storedAlerts]
+    .sort((a, b) => (getAlertTimestamp(b.createdAt)?.getTime() ?? 0)
+      - (getAlertTimestamp(a.createdAt)?.getTime() ?? 0));
 
   return {
     alerts,

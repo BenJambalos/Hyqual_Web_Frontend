@@ -90,6 +90,115 @@ export function buildReadingAlerts(history, farms, now = new Date()) {
   return alerts;
 }
 
+function getReadingAlertStorageKey() {
+  let userId = "anonymous";
+  try {
+    userId = JSON.parse(localStorage.getItem("hyqual_user") || "null")?.uid || userId;
+  } catch {
+    userId = "anonymous";
+  }
+  return `hyqual_reading_alerts_${userId}`;
+}
+
+export function reconcileReadingAlerts(history, farms, now = new Date()) {
+  if (typeof localStorage === "undefined") return buildReadingAlerts(history, farms, now);
+
+  let state = { activeByCondition: {}, alerts: [] };
+  try {
+    state = JSON.parse(localStorage.getItem(getReadingAlertStorageKey()) || "null") || state;
+  } catch {
+    state = { activeByCondition: {}, alerts: [] };
+  }
+  if (!state.activeByCondition || !Array.isArray(state.alerts)) {
+    state = { activeByCondition: {}, alerts: [] };
+  }
+
+  const latestByCondition = new Map();
+  for (const reading of history) {
+    if (reading.pondId == null) continue;
+    const timestamp = getAlertTimestamp(reading.createdAt);
+    if (!timestamp) continue;
+
+    const pondId = String(reading.pondId).replace(/^pond_/, "");
+    for (const parameter of readingParameters) {
+      const rawValue = reading[parameter.key];
+      const value = Number(rawValue);
+      if (rawValue == null || !Number.isFinite(value)) continue;
+      const key = `${pondId}:${parameter.key}`;
+      const previous = latestByCondition.get(key);
+      if (!previous || timestamp > previous.timestamp) {
+        latestByCondition.set(key, { pondId, parameter, value, timestamp });
+      }
+    }
+  }
+
+  const nowMs = now.getTime();
+  const maxAgeMs = 5 * 60 * 1000;
+  for (const [key, latest] of latestByCondition) {
+    if (nowMs - latest.timestamp.getTime() > maxAgeMs
+      || latest.timestamp.getTime() > nowMs + maxAgeMs) continue;
+
+    const farm = farms.find((item) => item.ponds.some((pond) => String(pond.id) === latest.pondId));
+    const pond = farm?.ponds.find((item) => String(item.id) === latest.pondId);
+    if (!farm || !pond) continue;
+
+    const status = getParamStatus(latest.parameter.thresholdKey, latest.value);
+    const activeId = state.activeByCondition[key];
+    const activeAlert = state.alerts.find((alert) => alert.id === activeId);
+    if (status === "normal" || status === "offline") {
+      if (activeAlert) {
+        activeAlert.isResolved = true;
+        activeAlert.resolvedAt = latest.timestamp.toISOString();
+        delete state.activeByCondition[key];
+      }
+      continue;
+    }
+
+    if (activeAlert) {
+      activeAlert.status = status;
+      activeAlert.riskLabel = status === "critical" ? "Severe risk" : "Moderate risk";
+      activeAlert.message = buildReadingMessage(latest.parameter, latest.value);
+      activeAlert.trend = status === "critical" ? "Critical reading" : "Monitor reading";
+      continue;
+    }
+
+    const timestamp = latest.timestamp;
+    const alert = {
+      id: `reading-${latest.pondId}-${latest.parameter.key}-${timestamp.getTime()}`,
+      farmId: farm.id,
+      pondId: latest.pondId,
+      farmName: farm.name,
+      pond: pond.name,
+      status,
+      riskLabel: status === "critical" ? "Severe risk" : "Moderate risk",
+      parameter: latest.parameter.label,
+      message: buildReadingMessage(latest.parameter, latest.value),
+      trend: status === "critical" ? "Critical reading" : "Monitor reading",
+      displayTime: timestamp.toLocaleString(),
+      date: getAlertDateKey(timestamp),
+      daysAgo: Math.max(0, Math.ceil((nowMs - timestamp.getTime()) / 86400000)),
+      createdAt: timestamp.toISOString(),
+      isResolved: false,
+    };
+    state.activeByCondition[key] = alert.id;
+    state.alerts.push(alert);
+  }
+
+  state.alerts = state.alerts.slice(-200);
+  localStorage.setItem(getReadingAlertStorageKey(), JSON.stringify(state));
+  return state.alerts.map((alert) => {
+    const timestamp = getAlertTimestamp(alert.createdAt);
+    return {
+      ...alert,
+      farmName: farms.find((farm) => String(farm.id) === String(alert.farmId))?.name ?? alert.farmName,
+      pond: farms.flatMap((farm) => farm.ponds).find((pond) => String(pond.id) === String(alert.pondId))?.name ?? alert.pond,
+      displayTime: timestamp ? timestamp.toLocaleString() : "Time unavailable",
+      date: timestamp ? getAlertDateKey(timestamp) : "",
+      daysAgo: timestamp ? Math.max(0, Math.ceil((nowMs - timestamp.getTime()) / 86400000)) : null,
+    };
+  });
+}
+
 export function normalizeStoredAlerts(items, farms, now = new Date()) {
   return items.map((alert) => {
     const farmId = alert.farmId ?? alert.farm_id;

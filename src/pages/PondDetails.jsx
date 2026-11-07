@@ -4,7 +4,7 @@ import { Thermometer, Droplet, Wind, Waves, Download, Calendar, Eye, AlertTriang
 import Sidebar from "../components/Sidebar";
 import DateRangeModal from "../components/DateRangeModal";
 import ReportPreview from "../components/ReportPreview";
-import { THRESHOLDS, getParamStatus, getOverallStatus } from "../utils/thresholds";
+import { THRESHOLDS, getParamStatus } from "../utils/thresholds";
 import { summaryReports } from "../config/reportDefinitions";
 import { getReportData } from "../utils/reportPreview";
 import { exportReport } from "../utils/reportExport";
@@ -13,7 +13,7 @@ import { useFarms } from "../hooks/useFarms";
 import { useAlerts } from "../hooks/useAlerts";
 import { useReportReadings } from "../hooks/useReportReadings";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
-import { useDeviceStatus } from "../hooks/useDeviceStatus";
+import { getPondMonitoringStatus } from "../utils/monitoringStatus";
 import { buildReportBlob, formatFileSize } from "../utils/reportExport";
 import "./Dashboard.css";
 import "./FarmDetails.css";
@@ -46,7 +46,6 @@ function PondDetails() {
   const { reading: liveReading, history: liveHistory, loading: liveLoading, error: readingsError } = useLiveReading(pondId);
   const weeklyReportReadings = useReportReadings(1);
   const dailyReportReadings = useReportReadings(3);
-  const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { alerts, loading: alertsLoading, error: alertsError } = useAlerts();
 
@@ -65,9 +64,7 @@ function PondDetails() {
   // If this is the pond wired to the real device, use its live data instead of
   // the static dummy values — everything else about the page works unchanged.
   const displayReadings = isLivePond && liveReading ? liveReading : staticReadings;
-  const displayStatus = isLivePond && deviceStatusReady && !deviceOnline
-    ? "offline"
-    : getOverallStatus(displayReadings);
+  const displayStatus = getPondMonitoringStatus(pond, displayReadings);
 
   const displayedHistory = liveHistory;
   const filteredLogs = historyFilter === "all"

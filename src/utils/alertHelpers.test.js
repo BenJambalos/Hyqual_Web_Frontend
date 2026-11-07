@@ -1,10 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildReadingAlerts,
   getAlertDateKey,
   getAlertTimestamp,
   normalizeStoredAlerts,
+  reconcileReadingAlerts,
 } from "./alertHelpers";
+
+function createStorage() {
+  const values = new Map();
+  return {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+}
 
 describe("alert normalization and generation", () => {
   const now = new Date("2026-11-04T04:00:00.000Z");
@@ -16,6 +25,13 @@ describe("alert normalization and generation", () => {
       { id: "8", name: "Pond 8" },
     ],
   }];
+
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", createStorage());
+    localStorage.setItem("hyqual_user", JSON.stringify({ uid: "admin-one" }));
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it("generates alerts only from each pond's latest recent abnormal reading", () => {
     const alerts = buildReadingAlerts([
@@ -56,5 +72,58 @@ describe("alert normalization and generation", () => {
   it("does not turn a missing or invalid timestamp into a current alert time", () => {
     expect(getAlertTimestamp(null)).toBeNull();
     expect(getAlertTimestamp("not-a-date")).toBeNull();
+  });
+
+  it("keeps the first alert timestamp until fresh readings resolve the condition", () => {
+    const firstAt = new Date("2026-11-04T03:59:00.000Z");
+    const first = reconcileReadingAlerts([
+      { pondId: 7, createdAt: firstAt.toISOString(), ph: 6 },
+    ], farms, now);
+    const alertId = first[0].id;
+
+    const stillCritical = reconcileReadingAlerts([
+      { pondId: 7, createdAt: "2026-11-04T03:59:00.000Z", ph: 6 },
+      { pondId: 7, createdAt: "2026-11-04T03:59:30.000Z", ph: 6.2 },
+    ], farms, now);
+    expect(stillCritical).toHaveLength(1);
+    expect(stillCritical[0]).toMatchObject({
+      id: alertId,
+      createdAt: firstAt.toISOString(),
+      isResolved: false,
+      status: "critical",
+    });
+
+    const resolved = reconcileReadingAlerts([
+      { pondId: 7, createdAt: "2026-11-04T03:59:00.000Z", ph: 6 },
+      { pondId: 7, createdAt: "2026-11-04T03:59:30.000Z", ph: 6.2 },
+      { pondId: 7, createdAt: "2026-11-04T03:59:50.000Z", ph: 8 },
+    ], farms, now);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]).toMatchObject({
+      id: alertId,
+      createdAt: firstAt.toISOString(),
+      isResolved: true,
+      resolvedAt: "2026-11-04T03:59:50.000Z",
+    });
+  });
+
+  it("starts a new alert after a resolved condition becomes abnormal again", () => {
+    reconcileReadingAlerts([
+      { pondId: 7, createdAt: "2026-11-04T03:59:00.000Z", ph: 6 },
+    ], farms, now);
+    const afterRecovery = reconcileReadingAlerts([
+      { pondId: 7, createdAt: "2026-11-04T03:59:00.000Z", ph: 6 },
+      { pondId: 7, createdAt: "2026-11-04T03:59:30.000Z", ph: 8 },
+    ], farms, now);
+    const afterRecurrence = reconcileReadingAlerts([
+      { pondId: 7, createdAt: "2026-11-04T03:59:00.000Z", ph: 6 },
+      { pondId: 7, createdAt: "2026-11-04T03:59:30.000Z", ph: 8 },
+      { pondId: 7, createdAt: "2026-11-04T03:59:50.000Z", ph: 6 },
+    ], farms, now);
+
+    expect(afterRecovery[0].isResolved).toBe(true);
+    expect(afterRecurrence).toHaveLength(2);
+    expect(afterRecurrence[1].isResolved).toBe(false);
+    expect(afterRecurrence[1].id).not.toBe(afterRecovery[0].id);
   });
 });

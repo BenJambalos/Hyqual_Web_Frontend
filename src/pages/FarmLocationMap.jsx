@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import { MapPin, Layers } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import { getOverallStatus } from "../utils/thresholds";
-import { useDeviceStatus } from "../hooks/useDeviceStatus";
+import { getFarmMonitoringStatus } from "../utils/monitoringStatus";
 import { useFarms } from "../hooks/useFarms";
 import "./FarmLocationMap.css";
 
@@ -24,16 +23,10 @@ function FarmLocationMap() {
   const [selectedFarmId, setSelectedFarmId] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const [statusFilter, setStatusFilter] = useState(null);
-  const { statusReady: deviceStatusReady, deviceOnline } = useDeviceStatus();
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
 
   const farmsWithStatus = farms.filter((farm) => farm.ponds.length > 0).map((farm) => {
-    const mainPond = farm.ponds[0];
-    const qualityStatus = getOverallStatus({
-      temp: mainPond.temp, ph: mainPond.ph, do: mainPond.do, sal: mainPond.sal,
-    });
-    const deviceOffline = farm.id === 3 && mainPond.id === "A" && deviceStatusReady && !deviceOnline;
-    return { ...farm, status: deviceOffline ? "offline" : qualityStatus };
+    return { ...farm, status: getFarmMonitoringStatus(farm.ponds) };
   });
 
   const selectedFarm = farmsWithStatus.find((f) => f.id === selectedFarmId);
