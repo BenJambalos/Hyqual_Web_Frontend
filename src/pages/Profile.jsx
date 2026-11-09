@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { api } from "../api/client";
+import { normalizePhoneNumber, PHONE_NUMBER_ERROR, sanitizePhoneInput } from "../utils/phoneNumber";
 import "./Profile.css";
 import Sidebar from "../components/Sidebar";
 import SuperadminSidebar from "../components/SuperadminSidebar";
@@ -30,6 +31,7 @@ function Profile() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [form, setForm] = useState({
     firstName: storedUser?.firstName || "",
     middleName: storedUser?.middleName || "",
@@ -44,7 +46,20 @@ function Profile() {
   const initials = `${form.firstName?.[0] || ""}${form.lastName?.[0] || ""}`;
 
   const handleChange = (field) => (e) => {
-    setForm({ ...form, [field]: e.target.value });
+    const value = field === "mobile" ? sanitizePhoneInput(e.target.value) : e.target.value;
+    setForm({
+      ...form,
+      [field]: value,
+    });
+    if (field === "mobile" && phoneError) {
+      setPhoneError(value.trim() && !normalizePhoneNumber(value) ? PHONE_NUMBER_ERROR : "");
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    const mobile = normalizePhoneNumber(form.mobile);
+    if (mobile) setForm((current) => ({ ...current, mobile }));
+    setPhoneError(String(form.mobile || "").trim() && !mobile ? PHONE_NUMBER_ERROR : "");
   };
 
   const togglePasswordVisibility = (field) => {
@@ -56,10 +71,21 @@ function Profile() {
 
   const handleSave = async () => {
     setProfileError("");
+    const mobile = normalizePhoneNumber(form.mobile);
+    if (form.mobile.trim() && !mobile) {
+      setPhoneError(PHONE_NUMBER_ERROR);
+      return;
+    }
+    setPhoneError("");
+
     try {
       const profileUpdates = Object.fromEntries(
-        Object.entries(form).filter(([field]) => field !== "email"),
+        Object.entries(form).filter(([field]) => (
+          field !== "email"
+          && (isSuperadmin || !["street", "barangay", "city"].includes(field))
+        )),
       );
+      profileUpdates.mobile = mobile;
       const response = await api.updateUser(storedUser.id || storedUser.uid, profileUpdates);
       const user = response.user ?? response;
       localStorage.setItem("hyqual_user", JSON.stringify(user));
@@ -220,7 +246,14 @@ function Profile() {
                   value={form.mobile}
                   disabled={!isEditing}
                   onChange={handleChange("mobile")}
+                  onBlur={handlePhoneBlur}
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="09xx xxx xxxx"
+                  aria-invalid={Boolean(phoneError)}
+                  aria-describedby={phoneError ? "profile-phone-error" : undefined}
                 />
+                {phoneError && <p className="phone-field-error" id="profile-phone-error" role="alert">{phoneError}</p>}
               </div>
               <div className="profile-field">
                 <label>Email Address</label>
@@ -239,7 +272,7 @@ function Profile() {
                 <label>Street</label>
                 <input
                   value={form.street}
-                  disabled={!isEditing}
+                  disabled={!isEditing || !isSuperadmin}
                   onChange={handleChange("street")}
                 />
               </div>
@@ -247,7 +280,7 @@ function Profile() {
                 <label>Barangay</label>
                 <input
                   value={form.barangay}
-                  disabled={!isEditing}
+                  disabled={!isEditing || !isSuperadmin}
                   onChange={handleChange("barangay")}
                 />
               </div>
@@ -255,7 +288,7 @@ function Profile() {
                 <label>City</label>
                 <input
                   value={form.city}
-                  disabled={!isEditing}
+                  disabled={!isEditing || !isSuperadmin}
                   onChange={handleChange("city")}
                 />
               </div>

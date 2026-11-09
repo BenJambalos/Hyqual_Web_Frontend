@@ -89,7 +89,7 @@ function AccountApproval() {
                 </div>
                 {acc.farmName && <p className="approval-farm-name">{acc.farmName}</p>}
                 <div className="approval-meta-row">
-                  <span>{[acc.barangay, acc.city, acc.province, acc.zip].filter(Boolean).join(", ")}</span>
+                  <span>{[acc.street, acc.barangay, acc.city, acc.province, acc.zip].filter(Boolean).join(", ")}</span>
                   <span>{acc.email}</span>
                   <span>{acc.phone}</span>
                   <span>{acc.submittedAt}</span>
@@ -143,7 +143,7 @@ function AccountApproval() {
             <p className="approval-section-label">CONTACT DETAILS</p>
             <div className="approval-detail-row">
               <span>Location</span>
-              <strong>{[selected.barangay, selected.city, selected.province, selected.zip].filter(Boolean).join(", ")}</strong>
+              <strong>{[selected.street, selected.barangay, selected.city, selected.province, selected.zip].filter(Boolean).join(", ")}</strong>
             </div>
             <div className="approval-detail-row">
               <span>Email</span>

@@ -50,6 +50,18 @@
   border-color: #1f9d6e;
 }
 
+.phone-field-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+.uf-field-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
 .uf-section-label {
   display: block;
   font-size: 11px;
@@ -73,6 +85,17 @@
   border-color: #1f9d6e;
   color: #0d5c46;
   background: #f4fbf7;
+  font-weight: 600;
+}
+
+.uf-role-locked {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 13px;
   font-weight: 600;
 }
 

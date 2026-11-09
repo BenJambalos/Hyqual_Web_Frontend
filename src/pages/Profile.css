@@ -133,3 +133,9 @@
   background: #f9fafb;
   color: #6b7280;
 }
+
+.phone-field-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 6px 0 0;
+}

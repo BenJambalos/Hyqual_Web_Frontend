@@ -5,6 +5,7 @@ import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 import { getFarmMonitoringStatus, getPondMonitoringStatus } from "../utils/monitoringStatus";
+import { formatUpdatedAt } from "../utils/formatUpdatedAt";
 import "./FarmDetails.css";
 
 const statusLabel = { normal: "Normal", critical: "Critical", moderate: "Moderate", offline: "Offline" };
@@ -51,7 +52,7 @@ function FarmDetails() {
           <p>Operator: {farm.owner}</p>
           <p>Location: {farm.location}</p>
           <p>Ponds: {farm.ponds.length}</p>
-          <p>Updated {isLiveFarm && liveReading ? "just now" : farm.updatedAt}</p>
+          <p>Updated {isLiveFarm && liveReading ? "just now" : formatUpdatedAt(farm.updatedAt)}</p>
         </div>
 
         <h3 className="ponds-heading">Ponds</h3>

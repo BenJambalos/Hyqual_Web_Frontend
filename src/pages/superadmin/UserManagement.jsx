@@ -17,16 +17,19 @@ import "./UserManagement.css";
 const roleOptions = ["All users", "BFAR Admin", "Farm Owner"];
 const statusOptions = ["All", "Active", "Offline"];
 
-function getUserFarmNames(user, farms) {
-  if (user.role !== "Farm Owner") return "—";
-
+function getAssignedFarms(user, farms) {
+  if (user.role !== "Farm Owner") return [];
   const userReferences = [user.id, user.uid, user.userId]
     .filter(Boolean)
     .map(normalizeReferenceId);
-  const assignedFarms = farms.filter((farm) => (
+  return farms.filter((farm) => (
     userReferences.includes(normalizeReferenceId(farm.ownerId))
   ));
+}
 
+function getUserFarmNames(user, farms) {
+  if (user.role !== "Farm Owner") return "—";
+  const assignedFarms = getAssignedFarms(user, farms);
   return assignedFarms.length > 0
     ? assignedFarms.map((farm) => farm.name).join(", ")
     : "Not assigned";
@@ -234,7 +237,11 @@ function UserManagement() {
       {formModal?.mode === "edit" && (
         <UserFormModal
           mode="edit"
-          initialData={formModal.user}
+          initialData={{
+            ...formModal.user,
+            farmName: formModal.user.farmName
+              || getAssignedFarms(formModal.user, farms).map((farm) => farm.name).join(", "),
+          }}
           onClose={() => setFormModal(null)}
           onSubmit={handleEditSubmit}
           onArchiveClick={() => {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import { normalizePhoneNumber, PHONE_NUMBER_ERROR, sanitizePhoneInput } from "../utils/phoneNumber";
 import "./UserFormModal.css";
 
 const emptyForm = {
@@ -8,18 +9,49 @@ const emptyForm = {
 };
 
 function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick }) {
-  const [form, setForm] = useState(initialData || emptyForm);
+  const [form, setForm] = useState(initialData
+    ? { ...initialData, phone: initialData.phone || "" }
+    : emptyForm);
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [saving, setSaving] = useState(false);
   const isFarmOwner = form.role === "Farm Owner";
 
-  const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const handleChange = (field) => (e) => {
+    const value = field === "phone" ? sanitizePhoneInput(e.target.value) : e.target.value;
+    setForm({ ...form, [field]: value });
+    if (field === "phone" && phoneError) {
+      setPhoneError(value.trim() && !normalizePhoneNumber(value) ? PHONE_NUMBER_ERROR : "");
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    const phone = normalizePhoneNumber(form.phone);
+    if (phone) setForm((current) => ({ ...current, phone }));
+    setPhoneError(form.phone.trim() && !phone ? PHONE_NUMBER_ERROR : "");
+  };
 
   const handleSubmit = async () => {
     setError("");
+    setPasswordError("");
+    if ((mode === "add" || form.password) && form.password.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
+      return;
+    }
+
+    const phone = normalizePhoneNumber(form.phone);
+    if (String(form.phone || "").trim() && !phone) {
+      setPhoneError(PHONE_NUMBER_ERROR);
+      return;
+    }
+    setPhoneError("");
+
     setSaving(true);
     try {
-      await onSubmit(form);
+      const submittedForm = { ...form, phone };
+      if (mode === "edit" && !submittedForm.password) delete submittedForm.password;
+      await onSubmit(submittedForm);
       onClose();
     } catch (submitError) {
       console.error("Unable to save user:", submitError);
@@ -50,9 +82,19 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
             <label>Middle name</label>
             <input value={form.middleName} onChange={handleChange("middleName")} placeholder="Middle name" />
           </div>
-          <div className="uf-field">
+          <div className="uf-field uf-phone-field">
             <label>Phone no.</label>
-            <input value={form.phone} onChange={handleChange("phone")} placeholder="Phone no." />
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={form.phone}
+              onChange={handleChange("phone")}
+              onBlur={handlePhoneBlur}
+              placeholder="09xx xxx xxxx"
+              aria-invalid={Boolean(phoneError)}
+              aria-describedby={phoneError ? "user-phone-error" : undefined}
+            />
+            {phoneError && <p className="phone-field-error" id="user-phone-error" role="alert">{phoneError}</p>}
           </div>
         </div>
 
@@ -61,37 +103,44 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
           <input value={form.email} onChange={handleChange("email")} placeholder="Email address" />
         </div>
 
-        {mode === "add" && (
+        {(mode === "add" || mode === "edit") && (
           <div className="uf-field">
-            <label>Password</label>
+            <label>{mode === "add" ? "Password" : "Set new password"}</label>
             <input
               type="password"
               value={form.password}
               onChange={handleChange("password")}
-              placeholder="At least 6 characters"
+              placeholder={mode === "add" ? "At least 6 characters" : "Leave blank to keep current password"}
               minLength={6}
-              required
+              required={mode === "add"}
+              aria-invalid={Boolean(passwordError)}
+              aria-describedby={passwordError ? "user-password-error" : undefined}
             />
+            {passwordError && <p className="uf-field-error" id="user-password-error" role="alert">{passwordError}</p>}
           </div>
         )}
 
         <label className="uf-section-label">Role</label>
-        <div className="uf-row">
-          <button
-            type="button"
-            className={"uf-role-btn" + (form.role === "BFAR Admin" ? " uf-role-btn-active" : "")}
-            onClick={() => setForm({ ...form, role: "BFAR Admin" })}
-          >
-            BFAR Administrator
-          </button>
-          <button
-            type="button"
-            className={"uf-role-btn" + (isFarmOwner ? " uf-role-btn-active" : "")}
-            onClick={() => setForm({ ...form, role: "Farm Owner" })}
-          >
-            Aquafarm Owner
-          </button>
-        </div>
+        {mode === "add" ? (
+          <div className="uf-row">
+            <button
+              type="button"
+              className={"uf-role-btn" + (form.role === "BFAR Admin" ? " uf-role-btn-active" : "")}
+              onClick={() => setForm({ ...form, role: "BFAR Admin" })}
+            >
+              BFAR Administrator
+            </button>
+            <button
+              type="button"
+              className={"uf-role-btn" + (isFarmOwner ? " uf-role-btn-active" : "")}
+              onClick={() => setForm({ ...form, role: "Farm Owner" })}
+            >
+              Aquafarm Owner
+            </button>
+          </div>
+        ) : (
+          <div className="uf-role-locked">{form.role}</div>
+        )}
 
         {isFarmOwner && (
           <div className="uf-field">
@@ -100,7 +149,7 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
           </div>
         )}
 
-        <label className="uf-section-label">{isFarmOwner ? "Aquafarm Location" : "Address"}</label>
+        <label className="uf-section-label">User Address</label>
         <div className="uf-row-3">
           <input value={form.street} onChange={handleChange("street")} placeholder="Street" />
           <input value={form.barangay} onChange={handleChange("barangay")} placeholder="Barangay" />

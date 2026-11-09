@@ -6,28 +6,11 @@ import { useLiveReading } from "../hooks/useLiveReading";
 import { useFarms } from "../hooks/useFarms";
 import { LIVE_DEVICE_TARGET } from "../config/liveDeviceConfig";
 import { getFarmMonitoringStatus } from "../utils/monitoringStatus";
+import { formatUpdatedAt } from "../utils/formatUpdatedAt";
 import "./MultiFarmMonitoring.css";
 import { useNavigate } from "react-router-dom";
 
 const statusLabel = { normal: "Normal", critical: "Critical", moderate: "Moderate", offline: "Offline" };
-
-function formatUpdatedAt(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      second: "2-digit",
-    }).formatToParts(date).map(({ type, value: part }) => [type, part]),
-  );
-
-  return `${parts.month}. ${parts.day}, ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} ${parts.dayPeriod}`;
-}
 
 function MultiFarmMonitoring() {
   const [activeFilter, setActiveFilter] = useState("all");
