@@ -65,7 +65,8 @@ describe("Login page", () => {
     await user.click(screen.getByRole("button", { name: /send reset link/i }));
 
     expect(api.requestPasswordReset).toHaveBeenCalledWith("user@example.com");
-    expect(screen.getByText(/if the account exists, a password reset link will be sent/i)).toBeInTheDocument();
+    expect(screen.getByText(/if an account is registered with this email, reset instructions will be sent/i)).toBeInTheDocument();
+    expect(screen.getByText(/check that you entered the address associated with your account/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open password reset link/i })).toHaveAttribute(
       "href",
       `${window.location.origin}/reset-password?token=reset-token`
@@ -91,7 +92,7 @@ describe("Login page", () => {
 
     expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
     finishRequest({});
-    expect(await screen.findByRole("status")).toHaveTextContent(/if the account exists/i);
+    expect(await screen.findByRole("status")).toHaveTextContent(/if an account is registered with this email/i);
   });
 
   test("blocks non-superadmin users from superadmin routes", async () => {

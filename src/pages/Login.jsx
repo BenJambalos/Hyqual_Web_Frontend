@@ -85,7 +85,9 @@ function Login() {
     setIsSendingReset(true);
     try {
       const result = await api.requestPasswordReset(trimmedEmail);
-      setResetMessage("If the account exists, a password reset link will be sent to the email address.");
+      setResetMessage(
+        "If an account is registered with this email, reset instructions will be sent. If you don't receive an email, check that you entered the address associated with your account and check your spam folder."
+      );
       if (result.token) {
         const resetUrl = new URL("/reset-password", window.location.origin);
         resetUrl.searchParams.set("token", result.token);
