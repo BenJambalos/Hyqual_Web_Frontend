@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calendar, FileText, Download, ChevronDown, Eye } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import Sidebar from "../components/Sidebar";
@@ -29,15 +29,18 @@ function ReportsAnalytics() {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [previewReportId, setPreviewReportId] = useState(null);
   const [selectedFarmId, setSelectedFarmId] = useState("all");
+  const [farmSearchQuery, setFarmSearchQuery] = useState("");
+  const [isFarmDropdownOpen, setIsFarmDropdownOpen] = useState(false);
+  const farmDropdownRef = useRef(null);
   const { farms, loading: farmsLoading, error: farmsError } = useFarms();
   const { history: liveHistory } = useLiveReading();
   const weeklyReadings = useReportReadings(1);
   const dailyReadings = useReportReadings(3);
   const reportReadingsById = { 1: weeklyReadings, 3: dailyReadings };
-  const { trend: allTrendData, distribution: statusDistribution } = buildAnalytics(liveHistory);
-  const trendData = customRange
-    ? buildAnalytics(filterHistoryByDateRange(liveHistory, customRange)).trend
-    : allTrendData;
+  const rangedHistory = customRange
+    ? filterHistoryByDateRange(liveHistory, customRange)
+    : liveHistory;
+  const { trend: trendData, distribution: statusDistribution } = buildAnalytics(rangedHistory);
   const displayedRange = customRange || getHistoryDateRange(liveHistory);
   const dateRangeLabel = displayedRange
     ? formatDateRange(displayedRange.from, displayedRange.to)
@@ -45,6 +48,10 @@ function ReportsAnalytics() {
   const [selectedFormats, setSelectedFormats] = useState(
     Object.fromEntries(summaryReports.map((r) => [r.id, r.defaultFormat]))
   );
+  const matchingFarms = farms.filter((farm) =>
+    farm.name.toLocaleLowerCase().includes(farmSearchQuery.trim().toLocaleLowerCase())
+  );
+  const selectedFarm = farms.find((farm) => farm.id === selectedFarmId);
   const reportScope = selectedFarmId === "all" ? {} : { farmId: selectedFarmId };
   const reportMetadata = Object.fromEntries(summaryReports.map((report) => {
     const readings = reportReadingsById[report.id];
@@ -59,6 +66,26 @@ function ReportsAnalytics() {
     activeFilter === "All"
       ? ["normal", "critical", "warning", "offline"]
       : [filterKeyMap[activeFilter]];
+
+  useEffect(() => {
+    if (!isFarmDropdownOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!farmDropdownRef.current?.contains(event.target)) {
+        setIsFarmDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setIsFarmDropdownOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isFarmDropdownOpen]);
 
   const filteredDistribution =
     activeFilter === "All"
@@ -191,19 +218,68 @@ function ReportsAnalytics() {
             <div className="summary-reports-card">
               <div className="summary-reports-header">
                 <h3>Summary reports</h3>
-                <label className="summary-farm-filter">
+                <div className="summary-farm-filter">
                   <span>Farm</span>
-                  <select
-                    aria-label="Filter summary reports by farm"
-                    value={selectedFarmId}
-                    onChange={(event) => setSelectedFarmId(event.target.value)}
-                  >
-                    <option value="all">All farms</option>
-                    {farms.map((farm) => (
-                      <option key={farm.id} value={farm.id}>{farm.name}</option>
-                    ))}
-                  </select>
-                </label>
+                  <div className="summary-farm-dropdown" ref={farmDropdownRef}>
+                    <button
+                      type="button"
+                      className="summary-farm-trigger"
+                      aria-label="Filter summary reports by farm"
+                      aria-haspopup="listbox"
+                      aria-expanded={isFarmDropdownOpen}
+                      onClick={() => {
+                        setFarmSearchQuery("");
+                        setIsFarmDropdownOpen((isOpen) => !isOpen);
+                      }}
+                    >
+                      <span>{selectedFarmId === "all" ? "All farms" : selectedFarm?.name ?? "Select farm"}</span>
+                      <ChevronDown size={14} />
+                    </button>
+                    {isFarmDropdownOpen && (
+                      <div className="summary-farm-menu">
+                        <input
+                          type="search"
+                          aria-label="Search farms"
+                          placeholder="Search farms..."
+                          value={farmSearchQuery}
+                          onChange={(event) => setFarmSearchQuery(event.target.value)}
+                        />
+                        <div className="summary-farm-options" role="listbox" aria-label="Farms">
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={selectedFarmId === "all"}
+                            className="summary-farm-option"
+                            onClick={() => {
+                              setSelectedFarmId("all");
+                              setIsFarmDropdownOpen(false);
+                            }}
+                          >
+                            All farms
+                          </button>
+                          {matchingFarms.map((farm) => (
+                            <button
+                              type="button"
+                              role="option"
+                              aria-selected={selectedFarmId === farm.id}
+                              className="summary-farm-option"
+                              key={farm.id}
+                              onClick={() => {
+                                setSelectedFarmId(farm.id);
+                                setIsFarmDropdownOpen(false);
+                              }}
+                            >
+                              {farm.name}
+                            </button>
+                          ))}
+                          {!matchingFarms.length && (
+                            <p className="summary-farm-empty">No matching farms</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {summaryReports.map((report) => (

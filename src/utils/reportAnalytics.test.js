@@ -37,6 +37,27 @@ describe("reports and analytics status summaries", () => {
       .toEqual([history[0], history[2]]);
   });
 
+  it("calculates status distribution from readings within the selected date range", () => {
+    const history = [
+      { createdAt: "2026-11-01T12:00:00", status: "critical" },
+      { createdAt: "2026-11-03T12:00:00", status: "normal" },
+      { createdAt: "2026-11-04T12:00:00", status: "moderate" },
+      { createdAt: "2026-11-06T12:00:00", status: "offline" },
+    ];
+    const rangedHistory = filterHistoryByDateRange(history, {
+      from: "2026-11-03",
+      to: "2026-11-04",
+    });
+    const { distribution } = buildAnalytics(rangedHistory);
+
+    expect(distribution.map(({ label, percent }) => ({ label, percent }))).toEqual([
+      { label: "Normal", percent: 50 },
+      { label: "Critical", percent: 0 },
+      { label: "Warning", percent: 50 },
+      { label: "Offline", percent: 0 },
+    ]);
+  });
+
   it("formats and derives the displayed date range", () => {
     expect(formatDateRange("2026-11-02", "2026-11-04")).toBe("November 2 - 4, 2026");
     expect(formatDateRange("2026-11-30", "2026-12-02")).toBe("November 30 - December 2, 2026");
