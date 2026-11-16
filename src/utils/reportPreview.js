@@ -42,11 +42,22 @@ function dateKey(date) {
 }
 
 function formatReportDate(date) {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }).format(date);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatGeneratedDate(date) {
+  const dateLabel = formatReportDate(date);
+  const hour = date.getHours();
+  const hour12 = hour % 12 || 12;
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const second = String(date.getSeconds()).padStart(2, "0");
+  const meridiem = hour < 12 ? "AM" : "PM";
+
+  return `${dateLabel} ${hour12}:${minute}:${second}${meridiem}`;
 }
 
 function formatDateRange(start, end) {
@@ -86,7 +97,7 @@ export function getReportPeriod(reportId, now = new Date()) {
       dateRange: definition.period === "week"
         ? formatDateRange(start, end)
         : formatReportDate(start),
-      generatedDate: formatReportDate(now),
+      generatedDate: formatGeneratedDate(now),
       reportId: `HQ-${dateKey(start)}${definition.period === "week" ? "W" : "D"}`,
     };
 }

@@ -3,48 +3,50 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { logAuditEvent } from "./auditLog";
 
-// Turns the nested report object (farms -> ponds -> parameters) into flat rows,
-// since CSV/XLSX/tables all want flat data, not nested objects.
-function flattenComplianceRows(report) {
-  const rows = [];
-  report.farms.forEach((farm) => {
-    farm.ponds.forEach((pond) => {
-      pond.parameters.forEach((param) => {
-        rows.push({
-          farm: farm.farmName,
-          owner: farm.owner,
-          location: farm.location,
-          pond: pond.pondName,
-          parameter: param.parameter,
-          sampleCount: param.sampleCount,
-          average: param.average,
-          min: param.min,
-          max: param.max,
-          status: param.status,
-        });
-      });
-    });
-  });
-  return rows;
+function getFarmComplianceRows(farm) {
+  return farm.ponds.flatMap((pond) => pond.parameters.map((param) => ({
+    farm: farm.farmName,
+    owner: farm.owner,
+    location: farm.location,
+    pond: pond.pondName,
+    parameter: param.parameter,
+    sampleCount: param.sampleCount,
+    average: param.average,
+    min: param.min,
+    max: param.max,
+    status: param.status,
+  })));
 }
 
-function flattenIncidentRows(report) {
-  const rows = [];
-  report.farms.forEach((farm) => {
-    farm.ponds.forEach((pond) => {
-      pond.incidents.forEach((inc) => {
-        rows.push({
-          farm: farm.farmName,
-          pond: pond.pondName,
-          timestamp: inc.timestamp,
-          parameter: inc.parameter,
-          value: inc.value,
-          description: inc.description,
-        });
-      });
-    });
-  });
-  return rows;
+function getFarmIncidentRows(farm) {
+  return farm.ponds.flatMap((pond) => pond.incidents.map((inc) => ({
+    farm: farm.farmName,
+    pond: pond.pondName,
+    timestamp: inc.timestamp,
+    parameter: inc.parameter,
+    value: inc.value,
+    description: inc.description,
+  })));
+}
+
+function getUniqueSheetName(name, usedNames) {
+  const baseName = String(name || "Farm")
+    .replace(/[\u002f\\?*:]/g, " ")
+    .replaceAll("[", " ")
+    .replaceAll("]", " ")
+    .replace(/^'+|'+$/g, "")
+    .trim() || "Farm";
+  let candidate = baseName.slice(0, 31);
+  let suffixNumber = 1;
+
+  while (usedNames.has(candidate.toLowerCase())) {
+    suffixNumber += 1;
+    const suffix = ` (${suffixNumber})`;
+    candidate = `${baseName.slice(0, 31 - suffix.length)}${suffix}`;
+  }
+
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
 }
 
 function triggerDownload(blob, filename) {
@@ -75,17 +77,6 @@ export function exportReportAsPDF(report) {
 
   doc.setFontSize(11);
   doc.text(report.dateRange, 105, y, { align: "center" });
-  y += 6;
-
-  doc.setFontSize(9);
-  doc.setTextColor(120);
-  doc.text(
-    `Generated: ${report.generatedDate}  |  Prepared for ${report.preparedFor}  |  Report ID: ${report.reportId}`,
-    105,
-    y,
-    { align: "center" }
-  );
-  doc.setTextColor(0);
   y += 10;
 
   doc.setFontSize(10);
@@ -108,9 +99,24 @@ export function exportReportAsPDF(report) {
     y += 3;
 
     farm.ponds.forEach((pond) => {
+      if (y > 260) {
+        doc.addPage();
+        y = 18;
+      }
+
+      const pondHeading = `${farm.farmName} - ${pond.pondName}`;
+      doc.setFillColor(13, 92, 70);
+      doc.rect(14, y, 182, 8, "F");
+      doc.setFontSize(10);
+      doc.setFont(undefined, "bold");
+      doc.setTextColor(255);
+      doc.text(pondHeading, 17, y + 5.5);
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(0);
+
       autoTable(doc, {
-        startY: y + 3,
-        head: [[pond.pondName, "Samples", report.averageLabel, "Min", "Max", "Status"]],
+        startY: y + 10,
+        head: [["Parameter", "Samples", report.averageLabel, "Min", "Max", "Status"]],
         body: pond.parameters.map((p) => [p.parameter, p.sampleCount, p.average, p.min, p.max, p.status.toUpperCase()]),
         headStyles: { fillColor: [55, 65, 81] },
         styles: { fontSize: 8 },
@@ -139,6 +145,16 @@ export function exportReportAsPDF(report) {
     y += 4;
   });
 
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(
+    `Generated: ${report.generatedDate}  |  Prepared for ${report.preparedFor}  |  Report ID: ${report.reportId}`,
+    105,
+    doc.internal.pageSize.getHeight() - 10,
+    { align: "center" }
+  );
+  doc.setTextColor(0);
+
   return doc.output("blob");
 }
 
@@ -146,24 +162,32 @@ export function exportReportAsPDF(report) {
 // CSV
 // ---------------------------------------------------------------------------
 export function exportReportAsCSV(report) {
-  const complianceRows = flattenComplianceRows(report);
-  const incidentRows = flattenIncidentRows(report);
   const escape = (val) => `"${String(val).replace(/"/g, '""')}"`;
 
   let csv = `${escape(report.title)},${escape(report.dateRange)}\n`;
   csv += `Generated,${escape(report.generatedDate)},Prepared for,${escape(report.preparedFor)},Report ID,${escape(report.reportId)}\n\n`;
 
   csv += "PARAMETER COMPLIANCE\n";
-  csv += ["Farm", "Owner", "Location", "Pond", "Parameter", "Samples", report.averageLabel, "Min", "Max", "Status"].map(escape).join(",") + "\n";
-  complianceRows.forEach((r) => {
-    csv += [r.farm, r.owner, r.location, r.pond, r.parameter, r.sampleCount, r.average, r.min, r.max, r.status].map(escape).join(",") + "\n";
+  report.farms.forEach((farm) => {
+    csv += `\nFARM,${escape(farm.farmName)}\n`;
+    csv += `OWNER,${escape(farm.owner)},LOCATION,${escape(farm.location)}\n`;
+    csv += ["Farm", "Owner", "Location", "Pond", "Parameter", "Samples", report.averageLabel, "Min", "Max", "Status"].map(escape).join(",") + "\n";
+    getFarmComplianceRows(farm).forEach((r) => {
+      csv += [r.farm, r.owner, r.location, r.pond, r.parameter, r.sampleCount, r.average, r.min, r.max, r.status].map(escape).join(",") + "\n";
+    });
   });
 
-  if (incidentRows.length > 0) {
+  if (report.farms.some((farm) => getFarmIncidentRows(farm).length > 0)) {
     csv += "\nINCIDENT & CRITICAL EVENT LOGS\n";
-    csv += ["Farm", "Pond", "Timestamp", "Parameter", "Value", "Description"].map(escape).join(",") + "\n";
-    incidentRows.forEach((r) => {
-      csv += [r.farm, r.pond, r.timestamp, r.parameter, r.value, r.description].map(escape).join(",") + "\n";
+    report.farms.forEach((farm) => {
+      const incidentRows = getFarmIncidentRows(farm);
+      if (incidentRows.length === 0) return;
+
+      csv += `\nFARM,${escape(farm.farmName)}\n`;
+      csv += ["Farm", "Pond", "Timestamp", "Parameter", "Value", "Description"].map(escape).join(",") + "\n";
+      incidentRows.forEach((r) => {
+        csv += [r.farm, r.pond, r.timestamp, r.parameter, r.value, r.description].map(escape).join(",") + "\n";
+      });
     });
   }
 
@@ -174,34 +198,9 @@ export function exportReportAsCSV(report) {
 // XLSX
 // ---------------------------------------------------------------------------
 export function exportReportAsXLSX(report) {
-  const complianceRows = flattenComplianceRows(report).map((r) => ({
-    Farm: r.farm,
-    Owner: r.owner,
-    Location: r.location,
-    Pond: r.pond,
-    Parameter: r.parameter,
-    Samples: r.sampleCount,
-    [report.averageLabel]: r.average,
-    Min: r.min,
-    Max: r.max,
-    Status: r.status.toUpperCase(),
-  }));
+  const wb = XLSX.utils.book_new();
 
-  const incidentRows = flattenIncidentRows(report).map((r) => ({
-    Farm: r.farm,
-    Pond: r.pond,
-    Timestamp: r.timestamp,
-    Parameter: r.parameter,
-    Value: r.value,
-    Description: r.description,
-  }));
-
-    const wb = XLSX.utils.book_new();
-
-    // Built as a plain grid (rows of cells) instead of from objects — since the
-    // metadata and the summary counts don't share the same shape, mixing them
-    // through json_to_sheet was producing mismatched, gappy columns.
-    const summaryGrid = [
+  const summaryGrid = [
     ["Title", report.title],
     ["Date Range", report.dateRange],
     ["Generated", report.generatedDate],
@@ -210,17 +209,41 @@ export function exportReportAsXLSX(report) {
     [],
     ["Farms in Report", "Normal", "Moderate", "Critical"],
     [report.summary.farmsInReport, report.summary.normalOverall, report.summary.moderateOverall, report.summary.criticalOverall],
+  ];
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryGrid);
+  XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+
+  const usedSheetNames = new Set(["summary"]);
+  report.farms.forEach((farm) => {
+    const complianceRows = getFarmComplianceRows(farm);
+    const incidentRows = getFarmIncidentRows(farm);
+    const farmGrid = [
+      ["Farm", farm.farmName],
+      ["Owner", farm.owner],
+      ["Location", farm.location],
+      [],
+      ["PARAMETER COMPLIANCE"],
+      ["Farm", "Owner", "Location", "Pond", "Parameter", "Samples", report.averageLabel, "Min", "Max", "Status"],
+      ...complianceRows.map((r) => [
+        r.farm, r.owner, r.location, r.pond, r.parameter, r.sampleCount,
+        r.average, r.min, r.max, r.status.toUpperCase(),
+      ]),
     ];
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryGrid);
-    XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
 
-  const complianceSheet = XLSX.utils.json_to_sheet(complianceRows);
-  XLSX.utils.book_append_sheet(wb, complianceSheet, "Compliance");
+    if (incidentRows.length > 0) {
+      farmGrid.push(
+        [],
+        ["INCIDENT & CRITICAL EVENT LOGS"],
+        ["Farm", "Pond", "Timestamp", "Parameter", "Value", "Description"],
+        ...incidentRows.map((r) => [
+          r.farm, r.pond, r.timestamp, r.parameter, r.value, r.description,
+        ]),
+      );
+    }
 
-  if (incidentRows.length > 0) {
-    const incidentSheet = XLSX.utils.json_to_sheet(incidentRows);
-    XLSX.utils.book_append_sheet(wb, incidentSheet, "Incidents");
-  }
+    const farmSheet = XLSX.utils.aoa_to_sheet(farmGrid);
+    XLSX.utils.book_append_sheet(wb, farmSheet, getUniqueSheetName(farm.farmName, usedSheetNames));
+  });
 
   const data = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   return new Blob([data], {

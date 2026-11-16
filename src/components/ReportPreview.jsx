@@ -68,9 +68,6 @@ function ReportPreview({ reportId, scope, onClose, farmData }) {
           <img src={logoIcon} alt="HyQual" className="report-logo" />
           <h1>{report.title}</h1>
           <p className="report-date-range">{report.dateRange}</p>
-          <p className="report-meta-line">
-            Generated: {report.generatedDate} · Prepared for {report.preparedFor} · Report ID: {report.reportId}
-          </p>
         </div>
 
         <hr />
@@ -193,6 +190,12 @@ function ReportPreview({ reportId, scope, onClose, farmData }) {
             )}
           </div>
         ))}
+
+        <div className="report-footer">
+          <p className="report-meta-line">
+            Generated: {report.generatedDate} · Prepared for {report.preparedFor} · Report ID: {report.reportId}
+          </p>
+        </div>
       </div>
     </div>
   );

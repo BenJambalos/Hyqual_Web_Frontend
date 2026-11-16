@@ -7,7 +7,7 @@ describe("report date periods", () => {
   it("uses the current Monday-to-Sunday week for weekly reports", () => {
     expect(getReportPeriod(1, now)).toMatchObject({
       dateRange: "November 2 - 8, 2026",
-      generatedDate: "November 4, 2026",
+      generatedDate: "November 4, 2026 12:00:00PM",
       reportId: "HQ-20261102W",
     });
   });
@@ -15,15 +15,20 @@ describe("report date periods", () => {
   it("uses today's calendar date for daily reports", () => {
     expect(getReportPeriod(3, now)).toMatchObject({
       dateRange: "November 4, 2026",
-      generatedDate: "November 4, 2026",
+      generatedDate: "November 4, 2026 12:00:00PM",
       reportId: "HQ-20261104D",
     });
+  });
+
+  it("includes the local time and full month name in the generated timestamp", () => {
+    expect(getReportPeriod(3, new Date(2026, 10, 15, 19, 37, 56)).generatedDate)
+      .toBe("November 15, 2026 7:37:56PM");
   });
 
   it("formats a weekly period that crosses from December into January", () => {
     expect(getReportPeriod(1, new Date(2027, 0, 1, 12))).toMatchObject({
       dateRange: "December 28, 2026 - January 3, 2027",
-      generatedDate: "January 1, 2027",
+      generatedDate: "January 1, 2027 12:00:00PM",
       reportId: "HQ-20261228W",
     });
   });

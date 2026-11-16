@@ -27,6 +27,20 @@ export function getHistoryDateRange(history) {
   return { from: formatDateInputValue(bounds.first), to: formatDateInputValue(bounds.last) };
 }
 
+export function getDefaultHistoryDateRange(history) {
+  const historyRange = getHistoryDateRange(history);
+  if (!historyRange) return null;
+
+  const end = new Date(`${historyRange.to}T00:00:00`);
+  const start = new Date(end);
+  const endDay = end.getDate();
+  start.setDate(1);
+  start.setMonth(start.getMonth() - 1);
+  start.setDate(Math.min(endDay, new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate()));
+
+  return { from: formatDateInputValue(start), to: historyRange.to };
+}
+
 export function filterHistoryByDateRange(history, range) {
   if (!range) return history;
 

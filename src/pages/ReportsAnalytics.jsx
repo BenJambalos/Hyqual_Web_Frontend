@@ -12,9 +12,9 @@ import { useFarms } from "../hooks/useFarms";
 import { useLiveReading } from "../hooks/useLiveReading";
 import {
   buildAnalytics,
+  getDefaultHistoryDateRange,
   filterHistoryByDateRange,
   formatDateRange,
-  getHistoryDateRange,
 } from "../utils/reportAnalytics";
 import { useReportReadings } from "../hooks/useReportReadings";
 
@@ -37,11 +37,12 @@ function ReportsAnalytics() {
   const weeklyReadings = useReportReadings(1);
   const dailyReadings = useReportReadings(3);
   const reportReadingsById = { 1: weeklyReadings, 3: dailyReadings };
+  const defaultRange = getDefaultHistoryDateRange(liveHistory);
+  const displayedRange = customRange || defaultRange;
   const rangedHistory = customRange
     ? filterHistoryByDateRange(liveHistory, customRange)
-    : liveHistory;
+    : filterHistoryByDateRange(liveHistory, defaultRange);
   const { trend: trendData, distribution: statusDistribution } = buildAnalytics(rangedHistory);
-  const displayedRange = customRange || getHistoryDateRange(liveHistory);
   const dateRangeLabel = displayedRange
     ? formatDateRange(displayedRange.from, displayedRange.to)
     : "No readings";
@@ -337,7 +338,7 @@ function ReportsAnalytics() {
       {showDateModal && (
         <DateRangeModal
           onClose={() => setShowDateModal(false)}
-          initialRange={customRange || getHistoryDateRange(liveHistory)}
+          initialRange={customRange || defaultRange}
           onApply={(from, to) => setCustomRange({ from, to })}
         />
       )}

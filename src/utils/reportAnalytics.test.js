@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAnalytics,
+  getDefaultHistoryDateRange,
   filterHistoryByDateRange,
   formatDateRange,
   getHistoryDateRange,
@@ -65,5 +66,19 @@ describe("reports and analytics status summaries", () => {
       { createdAt: "2026-11-04T08:00:00" },
       { createdAt: "2026-11-02T08:00:00" },
     ])).toEqual({ from: "2026-11-02", to: "2026-11-04" });
+  });
+
+  it("defaults the trend to one month ending on the newest reading", () => {
+    expect(getDefaultHistoryDateRange([
+      { createdAt: "2026-11-16T08:00:00" },
+      { createdAt: "2026-08-02T08:00:00" },
+      { createdAt: "2026-10-16T08:00:00" },
+    ])).toEqual({ from: "2026-10-16", to: "2026-11-16" });
+  });
+
+  it("clamps the default start date when the previous month is shorter", () => {
+    expect(getDefaultHistoryDateRange([
+      { createdAt: "2026-03-31T08:00:00" },
+    ])).toEqual({ from: "2026-02-28", to: "2026-03-31" });
   });
 });
