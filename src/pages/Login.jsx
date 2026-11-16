@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { ACTIVE_AUTH_SESSION_KEY, hasActiveAuthSession } from "../utils/authSession";
+import { isValidEmail } from "../utils/email";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -49,10 +50,15 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    const trimmedEmail = email.trim();
+    if (!isValidEmail(trimmedEmail)) {
+      setError("Invalid email address.");
+      return;
+    }
     isSigningIn.current = true;
 
     try {
-      const { user } = await api.login(email, password);
+      const { user } = await api.login(trimmedEmail, password);
 
       sessionStorage.setItem(ACTIVE_AUTH_SESSION_KEY, "true");
       localStorage.setItem("hyqual_user", JSON.stringify(user));
@@ -134,11 +140,12 @@ function Login() {
               <label htmlFor="email">Email</label>
               <input
                 id="email"
-                type="email"
+                type="text"
+                inputMode="email"
+                autoComplete="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
               />
 
               <label htmlFor="password">Password</label>
@@ -160,7 +167,7 @@ function Login() {
                 </button>
               </div>
 
-              {error && <p className="login-error">{error}</p>}
+              {error && <p className="login-error" role="alert">{error}</p>}
 
               <button type="submit" className="sign-in-btn">
                 Sign In <ArrowRight size={18} />

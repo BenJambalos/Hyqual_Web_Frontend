@@ -50,6 +50,40 @@ describe("Login page", () => {
     expect(JSON.parse(localStorage.getItem("hyqual_user"))).toEqual(account);
   });
 
+  test("shows an invalid-email error without attempting login", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    await user.type(screen.getByLabelText(/email/i), "not-an-email");
+    await user.type(screen.getByLabelText("Password", { exact: true }), "password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Invalid email address.");
+    expect(api.login).not.toHaveBeenCalled();
+  });
+
+  test("shows the server message when the email is not registered", async () => {
+    const user = userEvent.setup();
+    api.login.mockRejectedValue(new Error("This email does not exist."));
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    await user.type(screen.getByLabelText(/email/i), "missing@example.com");
+    await user.type(screen.getByLabelText("Password", { exact: true }), "password123");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("This email does not exist.");
+  });
+
   test("sends a reset request when the forgot-password flow is submitted", async () => {
     const user = userEvent.setup();
     api.requestPasswordReset.mockResolvedValue({ token: "reset-token" });

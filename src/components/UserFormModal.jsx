@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import { normalizePhoneNumber, PHONE_NUMBER_ERROR, sanitizePhoneInput } from "../utils/phoneNumber";
+import { isValidEmail } from "../utils/email";
 import "./UserFormModal.css";
 
 const emptyForm = {
@@ -13,6 +14,7 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
     ? { ...initialData, phone: initialData.phone || "" }
     : emptyForm);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -21,6 +23,9 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
   const handleChange = (field) => (e) => {
     const value = field === "phone" ? sanitizePhoneInput(e.target.value) : e.target.value;
     setForm({ ...form, [field]: value });
+    if (field === "email" && emailError) {
+      setEmailError(isValidEmail(value) ? "" : "Invalid email address.");
+    }
     if (field === "phone" && phoneError) {
       setPhoneError(value.trim() && !normalizePhoneNumber(value) ? PHONE_NUMBER_ERROR : "");
     }
@@ -34,7 +39,12 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
 
   const handleSubmit = async () => {
     setError("");
+    setEmailError("");
     setPasswordError("");
+    if (!isValidEmail(form.email)) {
+      setEmailError("Invalid email address.");
+      return;
+    }
     if ((mode === "add" || form.password) && form.password.length < 6) {
       setPasswordError("Password must be at least 6 characters.");
       return;
@@ -49,7 +59,7 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
 
     setSaving(true);
     try {
-      const submittedForm = { ...form, phone };
+      const submittedForm = { ...form, email: form.email.trim(), phone };
       if (mode === "edit" && !submittedForm.password) delete submittedForm.password;
       await onSubmit(submittedForm);
       onClose();
@@ -100,7 +110,15 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
 
         <div className="uf-field">
           <label>Email address</label>
-          <input value={form.email} onChange={handleChange("email")} placeholder="Email address" />
+          <input
+            type="email"
+            value={form.email}
+            onChange={handleChange("email")}
+            placeholder="Email address"
+            aria-invalid={Boolean(emailError)}
+            aria-describedby={emailError ? "user-email-error" : undefined}
+          />
+          {emailError && <p className="uf-field-error" id="user-email-error" role="alert">{emailError}</p>}
         </div>
 
         {(mode === "add" || mode === "edit") && (
