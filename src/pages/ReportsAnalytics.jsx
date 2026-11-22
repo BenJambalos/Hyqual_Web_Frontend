@@ -157,6 +157,68 @@ function ReportsAnalytics() {
                   {f}
                 </button>
               ))}
+              <div className="summary-farm-filter">
+                <span>Farm</span>
+                <div className="summary-farm-dropdown" ref={farmDropdownRef}>
+                  <button
+                    type="button"
+                    className="summary-farm-trigger"
+                    aria-label="Filter reports by farm"
+                    aria-haspopup="listbox"
+                    aria-expanded={isFarmDropdownOpen}
+                    onClick={() => {
+                      setFarmSearchQuery("");
+                      setIsFarmDropdownOpen((isOpen) => !isOpen);
+                    }}
+                  >
+                    <span>{selectedFarmId === "all" ? "All farms" : selectedFarm?.name ?? "Select farm"}</span>
+                    <ChevronDown size={14} />
+                  </button>
+                  {isFarmDropdownOpen && (
+                    <div className="summary-farm-menu">
+                      <input
+                        type="search"
+                        aria-label="Search farms"
+                        placeholder="Search farms..."
+                        value={farmSearchQuery}
+                        onChange={(event) => setFarmSearchQuery(event.target.value)}
+                      />
+                      <div className="summary-farm-options" role="listbox" aria-label="Farms">
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={selectedFarmId === "all"}
+                          className="summary-farm-option"
+                          onClick={() => {
+                            setSelectedFarmId("all");
+                            setIsFarmDropdownOpen(false);
+                          }}
+                        >
+                          All farms
+                        </button>
+                        {matchingFarms.map((farm) => (
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={selectedFarmId === farm.id}
+                            className="summary-farm-option"
+                            key={farm.id}
+                            onClick={() => {
+                              setSelectedFarmId(farm.id);
+                              setIsFarmDropdownOpen(false);
+                            }}
+                          >
+                            {farm.name}
+                          </button>
+                        ))}
+                        {!matchingFarms.length && (
+                          <p className="summary-farm-empty">No matching farms</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="reports-grid">
@@ -166,78 +228,13 @@ function ReportsAnalytics() {
                     <h3>Overall Water Quality Risk Trend</h3>
                     <p>{selectedFarm?.name || "Aggregated across all monitored farms"}</p>
                   </div>
-                  <div className="trend-chart-controls">
-                    <div className="summary-farm-filter">
-                      <span>Farm</span>
-                      <div className="summary-farm-dropdown" ref={farmDropdownRef}>
-                        <button
-                          type="button"
-                          className="summary-farm-trigger"
-                          aria-label="Filter reports by farm"
-                          aria-haspopup="listbox"
-                          aria-expanded={isFarmDropdownOpen}
-                          onClick={() => {
-                            setFarmSearchQuery("");
-                            setIsFarmDropdownOpen((isOpen) => !isOpen);
-                          }}
-                        >
-                          <span>{selectedFarmId === "all" ? "All farms" : selectedFarm?.name ?? "Select farm"}</span>
-                          <ChevronDown size={14} />
-                        </button>
-                        {isFarmDropdownOpen && (
-                          <div className="summary-farm-menu">
-                            <input
-                              type="search"
-                              aria-label="Search farms"
-                              placeholder="Search farms..."
-                              value={farmSearchQuery}
-                              onChange={(event) => setFarmSearchQuery(event.target.value)}
-                            />
-                            <div className="summary-farm-options" role="listbox" aria-label="Farms">
-                              <button
-                                type="button"
-                                role="option"
-                                aria-selected={selectedFarmId === "all"}
-                                className="summary-farm-option"
-                                onClick={() => {
-                                  setSelectedFarmId("all");
-                                  setIsFarmDropdownOpen(false);
-                                }}
-                              >
-                                All farms
-                              </button>
-                              {matchingFarms.map((farm) => (
-                                <button
-                                  type="button"
-                                  role="option"
-                                  aria-selected={selectedFarmId === farm.id}
-                                  className="summary-farm-option"
-                                  key={farm.id}
-                                  onClick={() => {
-                                    setSelectedFarmId(farm.id);
-                                    setIsFarmDropdownOpen(false);
-                                  }}
-                                >
-                                  {farm.name}
-                                </button>
-                              ))}
-                              {!matchingFarms.length && (
-                                <p className="summary-farm-empty">No matching farms</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="trend-date-control">
-                      <span className="trend-date-range">{dateRangeLabel}</span>
-                      <button className="icon-btn" aria-label="Select trend date range" onClick={() => setShowDateModal(true)}>
-                        <Calendar size={16} />
-                      </button>
-                    </div>
+                  <div className="trend-date-control">
+                    <span className="trend-date-range">{dateRangeLabel}</span>
+                    <button className="icon-btn" aria-label="Select trend date range" onClick={() => setShowDateModal(true)}>
+                      <Calendar size={16} />
+                    </button>
                   </div>
                 </div>
-
                 {trendData.length ? (
                   <ResponsiveContainer width="100%" height={280}>
                     <AreaChart data={trendData}>

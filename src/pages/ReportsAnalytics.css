@@ -1,5 +1,7 @@
 .filter-pills {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -46,12 +48,6 @@
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.trend-chart-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .trend-date-range {
@@ -305,9 +301,4 @@
     gap: 12px;
   }
 
-  .trend-chart-controls {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: space-between;
-  }
 }
