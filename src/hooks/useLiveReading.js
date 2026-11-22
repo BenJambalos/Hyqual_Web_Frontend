@@ -54,11 +54,15 @@ function buildReadingData(entriesByParam) {
   return { reading, history };
 }
 
-export function useLiveReading(pondId) {
-  const [reading, setReading] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function useLiveReading(pondId, farmId) {
+  const [result, setResult] = useState({
+    pondId,
+    farmId,
+    reading: null,
+    history: [],
+    loading: true,
+    error: null,
+  });
 
   useEffect(() => {
     let active = true;
@@ -67,25 +71,34 @@ export function useLiveReading(pondId) {
 
     const refresh = async () => {
       try {
-        const values = await Promise.all(params.map((param) => api.readings(param, { pondId })));
+        const values = await Promise.all(params.map((param) => api.readings(param, { pondId, farmId })));
         if (!active) return;
         const data = buildReadingData(Object.fromEntries(params.map((param, index) => [
           param,
           values[index],
         ])));
-        setReading(data.reading);
-        setHistory(data.history);
-        setError(null);
+        setResult({
+          pondId,
+          farmId,
+          reading: data.reading,
+          history: data.history,
+          loading: false,
+          error: null,
+        });
       } catch (error) {
         if (active) {
           console.error("Unable to load live readings:", error);
-          setError(error);
+          setResult({
+            pondId,
+            farmId,
+            reading: null,
+            history: [],
+            loading: false,
+            error,
+          });
         }
       } finally {
-        if (active) {
-          setLoading(false);
-          timer = window.setTimeout(refresh, 5000);
-        }
+        if (active) timer = window.setTimeout(refresh, 5000);
       }
     };
 
@@ -94,7 +107,9 @@ export function useLiveReading(pondId) {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [pondId]);
+  }, [pondId, farmId]);
 
-  return { reading, history, loading, error };
+  return result.pondId === pondId && result.farmId === farmId
+    ? result
+    : { reading: null, history: [], loading: true, error: null };
 }

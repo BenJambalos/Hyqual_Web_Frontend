@@ -62,9 +62,12 @@ export const api = {
   presence: () => apiRequest("/presence"),
   registerDevice: (data) => apiRequest("/device/registrations", jsonRequest("POST", data)),
   deviceState: (key) => apiRequest(`/device/state/${encodeURIComponent(key)}`),
-  readings: (parameter, { pondId } = {}) => {
-    const query = pondId == null ? "" : `?pondId=${encodeURIComponent(pondId)}`;
-    return apiRequest(`/device/readings/${encodeURIComponent(parameter)}${query}`);
+  readings: (parameter, { pondId, farmId } = {}) => {
+    const query = new URLSearchParams();
+    if (pondId != null) query.set("pondId", pondId);
+    if (farmId != null) query.set("farmId", farmId);
+    const queryString = query.toString();
+    return apiRequest(`/device/readings/${encodeURIComponent(parameter)}${queryString ? `?${queryString}` : ""}`);
   },
   reportReadings: (from, to) => {
     const query = new URLSearchParams({ from, to });

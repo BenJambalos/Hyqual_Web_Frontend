@@ -48,6 +48,12 @@
   gap: 10px;
 }
 
+.trend-chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .trend-date-range {
   color: #687771;
   font-size: 12px;
@@ -291,4 +297,17 @@
   color: #9ca3af;
   padding: 40px 0;
   text-align: center;
+}
+
+@media (max-width: 760px) {
+  .chart-card-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .trend-chart-controls {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
 }
