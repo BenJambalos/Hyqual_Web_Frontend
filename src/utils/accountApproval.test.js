@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isApprovedForManagement } from "./accountApproval";
+import { getAccountStatus, isApprovedForManagement } from "./accountApproval";
 
 describe("approved account visibility", () => {
   it("hides a pending account", () => {
@@ -22,5 +22,12 @@ describe("approved account visibility", () => {
 
   it("keeps active accounts created directly by a superadmin", () => {
     expect(isApprovedForManagement({ id: "admin-added", status: "Active" }, [])).toBe(true);
+  });
+
+  it("uses heartbeat presence for active and offline account status", () => {
+    const admin = { id: "admin-1", status: "Active" };
+
+    expect(getAccountStatus(admin, { "admin-1": { state: "online" } }, [])).toBe("Active");
+    expect(getAccountStatus(admin, { "admin-1": { state: "offline" } }, [])).toBe("Offline");
   });
 });

@@ -10,6 +10,7 @@ import { useFarms } from "../../hooks/useFarms";
 import { useCollection } from "../../hooks/useCollection";
 import { useUserPresence } from "../../hooks/useUserPresence";
 import { getAccountStatus, isApprovedForManagement, normalizeReferenceId } from "../../utils/accountApproval";
+import { formatLastSeen } from "../../utils/accountPresence";
 import "../Dashboard.css";
 import "./SuperadminOverview.css";
 import "./UserManagement.css";
@@ -33,23 +34,6 @@ function getUserFarmNames(user, farms) {
   return assignedFarms.length > 0
     ? assignedFarms.map((farm) => farm.name).join(", ")
     : "Not assigned";
-}
-
-function getLastSeen(user, presence, now) {
-  if (presence[user.id]?.state === "online") return "Online now";
-
-  const timestamp = presence[user.id]?.lastChanged;
-  const lastSeen = Number.isFinite(timestamp)
-    ? new Date(timestamp)
-    : user.lastSeen?.toDate?.() || new Date(user.lastSeen);
-
-  if (Number.isNaN(lastSeen.getTime())) return user.lastSeen || "Never";
-  const minutesAgo = Math.max(0, Math.floor((now - lastSeen.getTime()) / 60000));
-  if (minutesAgo < 1) return "Just now";
-  if (minutesAgo < 60) return `${minutesAgo} min ago`;
-  const hoursAgo = Math.floor(minutesAgo / 60);
-  if (hoursAgo < 24) return `${hoursAgo} hr ago`;
-  return lastSeen.toLocaleString();
 }
 
 function UserManagement() {
@@ -203,7 +187,7 @@ function UserManagement() {
                 </span>
               </span>
 
-              <span className="um-last-seen">{getLastSeen(user, presence, now)}</span>
+              <span className="um-last-seen">{formatLastSeen(user, presence, now)}</span>
 
               <span className="um-row-actions">
                 <button
@@ -278,7 +262,7 @@ function UserManagement() {
               <div><dt>Farm</dt><dd>{profileUser.farmName || getUserFarmNames(profileUser, farms)}</dd></div>
               <div><dt>Address</dt><dd>{[profileUser.street, profileUser.barangay, profileUser.city].filter(Boolean).join(", ") || "—"}</dd></div>
               <div><dt>Status</dt><dd>{getAccountStatus(profileUser, presence, approvals)}</dd></div>
-              <div><dt>Last seen</dt><dd>{getLastSeen(profileUser, presence, now)}</dd></div>
+              <div><dt>Last seen</dt><dd>{formatLastSeen(profileUser, presence, now)}</dd></div>
             </dl>
           </div>
         </Modal>
