@@ -50,6 +50,28 @@
   border-color: #1f9d6e;
 }
 
+.uf-password-wrapper {
+  position: relative;
+}
+
+.uf-password-wrapper input {
+  padding-right: 42px;
+}
+
+.uf-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+
 .phone-field-error {
   color: #dc2626;
   font-size: 12px;

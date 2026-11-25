@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Modal from "./Modal";
 import { normalizePhoneNumber, PHONE_NUMBER_ERROR, sanitizePhoneInput } from "../utils/phoneNumber";
 import { isValidEmail } from "../utils/email";
@@ -18,6 +19,7 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
   const [phoneError, setPhoneError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const isFarmOwner = form.role === "Farm Owner";
 
   const handleChange = (field) => (e) => {
@@ -123,17 +125,28 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
 
         {(mode === "add" || mode === "edit") && (
           <div className="uf-field">
-            <label>{mode === "add" ? "Password" : "Set new password"}</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={handleChange("password")}
-              placeholder={mode === "add" ? "At least 6 characters" : "Leave blank to keep current password"}
-              minLength={6}
-              required={mode === "add"}
-              aria-invalid={Boolean(passwordError)}
-              aria-describedby={passwordError ? "user-password-error" : undefined}
-            />
+            <label htmlFor="user-password">Password</label>
+            <div className="uf-password-wrapper">
+              <input
+                id="user-password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={handleChange("password")}
+                placeholder={mode === "add" ? "At least 6 characters" : "Leave blank to keep current password"}
+                minLength={6}
+                required={mode === "add"}
+                aria-invalid={Boolean(passwordError)}
+                aria-describedby={passwordError ? "user-password-error" : undefined}
+              />
+              <button
+                type="button"
+                className="uf-password-toggle"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {passwordError && <p className="uf-field-error" id="user-password-error" role="alert">{passwordError}</p>}
           </div>
         )}
