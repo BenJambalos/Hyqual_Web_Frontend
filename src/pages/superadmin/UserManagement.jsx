@@ -52,6 +52,7 @@ function UserManagement() {
 
   const [formModal, setFormModal] = useState(null); // { mode: "add"|"edit", user? }
   const [confirmArchive, setConfirmArchive] = useState(null); // user being archived
+  const [pendingAdminReplacement, setPendingAdminReplacement] = useState(null);
 
   useEffect(() => {
     const initialUpdate = window.setTimeout(() => setNow(Date.now()), 0);
@@ -79,7 +80,14 @@ function UserManagement() {
       assignedFarmNames: getUserFarmNames(user, farms),
     }));
 
-  const handleAddSubmit = (formData) => addUser(formData);
+  const handleAddSubmit = (formData) => {
+    if (formData.role === "BFAR Admin") {
+      setFormModal(null);
+      setPendingAdminReplacement(formData);
+      return;
+    }
+    return addUser(formData);
+  };
   const handleEditSubmit = (formData) => updateUser(formModal.user.id, formData);
 
   return (
@@ -243,6 +251,17 @@ function UserManagement() {
           danger
           onClose={() => setConfirmArchive(null)}
           onConfirm={() => archiveUser(confirmArchive.id)}
+        />
+      )}
+
+      {pendingAdminReplacement && (
+        <ConfirmModal
+          title="Add a BFAR Admin account?"
+          message="If an active BFAR Admin account exists, it will be disabled and unable to sign in. The account will be retained. Continue and create this new BFAR Admin account?"
+          confirmLabel="Continue"
+          danger
+          onClose={() => setPendingAdminReplacement(null)}
+          onConfirm={() => addUser({ ...pendingAdminReplacement, replaceActiveAdmin: true })}
         />
       )}
 
