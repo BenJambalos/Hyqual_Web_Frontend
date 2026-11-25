@@ -8,12 +8,6 @@ export function useUsers() {
     await api.createUser(userData);
   };
 
-  const getReplacedBfarAdmins = async () => api.replacedBfarAdmins();
-
-  const reactivateBfarAdmin = async (id) => {
-    await api.reactivateBfarAdmin(id);
-  };
-
   const updateUser = async (id, updates) => {
     await api.updateUser(id, updates);
   };
@@ -35,8 +29,6 @@ export function useUsers() {
     loading,
     error,
     addUser,
-    getReplacedBfarAdmins,
-    reactivateBfarAdmin,
     updateUser,
     archiveUser,
     restoreUser,

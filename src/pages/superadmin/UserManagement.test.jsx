@@ -9,8 +9,6 @@ import UserManagement from "./UserManagement";
 
 const mocks = vi.hoisted(() => ({
   addUser: vi.fn(),
-  getReplacedBfarAdmins: vi.fn(),
-  reactivateBfarAdmin: vi.fn(),
   updateUser: vi.fn(),
   archiveUser: vi.fn(),
 }));
@@ -19,8 +17,6 @@ vi.mock("../../hooks/useUsers", () => ({
   useUsers: () => ({
     users: [],
     addUser: mocks.addUser,
-    getReplacedBfarAdmins: mocks.getReplacedBfarAdmins,
-    reactivateBfarAdmin: mocks.reactivateBfarAdmin,
     updateUser: mocks.updateUser,
     archiveUser: mocks.archiveUser,
   }),
@@ -68,34 +64,4 @@ describe("UserManagement BFAR Admin replacement", () => {
     }));
   });
 
-  it("confirms before reactivating a replaced BFAR Admin", async () => {
-    const user = userEvent.setup();
-    mocks.getReplacedBfarAdmins.mockResolvedValue([{
-      id: "admin-12",
-      firstName: "Previous",
-      lastName: "Admin",
-      email: "previous@example.com",
-      reactivationExpiresAt: "2026-12-01T00:00:00.000Z",
-    }]);
-    mocks.reactivateBfarAdmin.mockResolvedValue(undefined);
-
-    render(
-      <MemoryRouter>
-        <UserManagement />
-      </MemoryRouter>,
-    );
-
-    await user.click(screen.getByRole("button", { name: /previous admins/i }));
-    expect(await screen.findByText("previous@example.com")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Reactivate" }));
-
-    expect(await screen.findByText(/any currently active bfar admin account will be disabled/i))
-      .toBeInTheDocument();
-    expect(mocks.reactivateBfarAdmin).not.toHaveBeenCalled();
-
-    const reactivateButtons = screen.getAllByRole("button", { name: "Reactivate" });
-    await user.click(reactivateButtons[reactivateButtons.length - 1]);
-
-    expect(mocks.reactivateBfarAdmin).toHaveBeenCalledWith("admin-12");
-  });
 });

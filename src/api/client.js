@@ -53,10 +53,7 @@ export const api = {
   deleteRecord: (name, id) =>
     apiRequest(`/collections/${encodeURIComponent(name)}/${encodeURIComponent(id)}`, { method: "DELETE" }),
   users: () => apiRequest("/users"),
-  replacedBfarAdmins: () => apiRequest("/users/replaced-admins"),
   createUser: (data) => apiRequest("/users", jsonRequest("POST", data)),
-  reactivateBfarAdmin: (id) =>
-    apiRequest(`/users/${encodeURIComponent(id)}/reactivate`, { method: "POST" }),
   updateUser: (id, data) => apiRequest(`/users/${encodeURIComponent(id)}`, jsonRequest("PATCH", data)),
   deleteUser: (id) => apiRequest(`/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
   approveAccount: (id) => apiRequest(`/approvals/${encodeURIComponent(id)}/approve`, { method: "POST" }),
