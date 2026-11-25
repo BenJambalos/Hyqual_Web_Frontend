@@ -68,6 +68,12 @@ describe("report export file metadata", () => {
     expect(blob.size).toBeGreaterThan(0);
   });
 
+  it("embeds the report preview logo in PDF exports", async () => {
+    const pdf = await buildReportBlob(report, "PDF").text();
+
+    expect(pdf).toContain("/Subtype /Image");
+  });
+
   it("formats file sizes for report cards", () => {
     expect(formatFileSize(512)).toBe("512 B");
     expect(formatFileSize(1536)).toBe("1.5 KB");

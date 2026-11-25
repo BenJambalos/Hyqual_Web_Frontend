@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import logoIcon from "../assets/hyqual-logo-icon.png?inline";
 import { logAuditEvent } from "./auditLog";
 
 function getFarmComplianceRows(farm) {
@@ -69,7 +70,8 @@ function safeFilename(report) {
 // ---------------------------------------------------------------------------
 export function exportReportAsPDF(report) {
   const doc = new jsPDF();
-  let y = 18;
+  doc.addImage(logoIcon, "PNG", 96, 8, 18, 18);
+  let y = 33;
 
   doc.setFontSize(16);
   doc.text(report.title, 105, y, { align: "center" });
@@ -77,7 +79,7 @@ export function exportReportAsPDF(report) {
 
   doc.setFontSize(11);
   doc.text(report.dateRange, 105, y, { align: "center" });
-  y += 10;
+  y += 8;
 
   doc.setFontSize(10);
   doc.text(`Farms in Report: ${report.summary.farmsInReport}`, 14, y);
