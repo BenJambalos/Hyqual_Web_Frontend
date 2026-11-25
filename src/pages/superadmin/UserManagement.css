@@ -33,6 +33,53 @@
   cursor: pointer;
 }
 
+.um-account-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.um-replaced-admins-btn {
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.um-replaced-admins-content > h2 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 18px;
+}
+
+.um-replaced-admins-content > p {
+  margin: 0 0 16px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.um-replaced-admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.um-replaced-admin-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.um-replaced-admin-row strong {
+  color: #111827;
+}
+
+.um-replaced-admin-row span,
+.um-replaced-admin-row small {
+  color: #6b7280;
+}
+
 .um-filters {
   display: flex;
   gap: 10px;

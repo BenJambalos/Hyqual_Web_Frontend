@@ -8,6 +8,12 @@ export function useUsers() {
     await api.createUser(userData);
   };
 
+  const getReplacedBfarAdmins = async () => api.replacedBfarAdmins();
+
+  const reactivateBfarAdmin = async (id) => {
+    await api.reactivateBfarAdmin(id);
+  };
+
   const updateUser = async (id, updates) => {
     await api.updateUser(id, updates);
   };
@@ -24,5 +30,16 @@ export function useUsers() {
     await api.deleteUser(id);
   };
 
-  return { users, loading, error, addUser, updateUser, archiveUser, restoreUser, deleteUser };
+  return {
+    users,
+    loading,
+    error,
+    addUser,
+    getReplacedBfarAdmins,
+    reactivateBfarAdmin,
+    updateUser,
+    archiveUser,
+    restoreUser,
+    deleteUser,
+  };
 }

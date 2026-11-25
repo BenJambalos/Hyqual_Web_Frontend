@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus, Archive, Search, ChevronDown, Pencil, Trash2, Eye } from "lucide-react";
+import { UserPlus, Archive, Search, ChevronDown, Pencil, Trash2, Eye, RotateCcw } from "lucide-react";
 import SuperadminSidebar from "../../components/SuperadminSidebar";
 import UserFormModal from "../../components/UserFormModal";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -38,7 +38,14 @@ function getUserFarmNames(user, farms) {
 
 function UserManagement() {
   const navigate = useNavigate();
-  const { users, addUser, updateUser, archiveUser } = useUsers();
+  const {
+    users,
+    addUser,
+    getReplacedBfarAdmins,
+    reactivateBfarAdmin,
+    updateUser,
+    archiveUser,
+  } = useUsers();
   const { farms } = useFarms();
   const { items: approvals } = useCollection("approvals");
   const presence = useUserPresence(false);
@@ -53,6 +60,11 @@ function UserManagement() {
   const [formModal, setFormModal] = useState(null); // { mode: "add"|"edit", user? }
   const [confirmArchive, setConfirmArchive] = useState(null); // user being archived
   const [pendingAdminReplacement, setPendingAdminReplacement] = useState(null);
+  const [replacedAdminsOpen, setReplacedAdminsOpen] = useState(false);
+  const [replacedAdmins, setReplacedAdmins] = useState([]);
+  const [loadingReplacedAdmins, setLoadingReplacedAdmins] = useState(false);
+  const [replacedAdminsError, setReplacedAdminsError] = useState("");
+  const [pendingReactivation, setPendingReactivation] = useState(null);
 
   useEffect(() => {
     const initialUpdate = window.setTimeout(() => setNow(Date.now()), 0);
@@ -88,6 +100,18 @@ function UserManagement() {
     }
     return addUser(formData);
   };
+  const openReplacedAdmins = async () => {
+    setReplacedAdminsOpen(true);
+    setLoadingReplacedAdmins(true);
+    setReplacedAdminsError("");
+    try {
+      setReplacedAdmins(await getReplacedBfarAdmins());
+    } catch (error) {
+      setReplacedAdminsError(error.message || "Unable to load previous BFAR Admin accounts.");
+    } finally {
+      setLoadingReplacedAdmins(false);
+    }
+  };
   const handleEditSubmit = (formData) => updateUser(formModal.user.id, formData);
 
   return (
@@ -110,9 +134,14 @@ function UserManagement() {
         </div>
 
         <div className="um-toolbar">
-          <button className="archive-toolbar-btn" onClick={() => navigate("/superadmin/users/archived")}>
-            <Archive size={14} /> Archive
-          </button>
+          <div className="um-account-tools">
+            <button className="archive-toolbar-btn" onClick={() => navigate("/superadmin/users/archived")}>
+              <Archive size={14} /> Archive
+            </button>
+            <button className="archive-toolbar-btn um-replaced-admins-btn" onClick={openReplacedAdmins}>
+              <RotateCcw size={14} /> Previous Admins
+            </button>
+          </div>
 
           <div className="um-filters">
             <div className="dropdown-wrapper">
@@ -262,6 +291,46 @@ function UserManagement() {
           danger
           onClose={() => setPendingAdminReplacement(null)}
           onConfirm={() => addUser({ ...pendingAdminReplacement, replaceActiveAdmin: true })}
+        />
+      )}
+
+      {replacedAdminsOpen && (
+        <Modal onClose={() => setReplacedAdminsOpen(false)}>
+          <div className="um-profile-content um-replaced-admins-content">
+            <h2>Previous BFAR Admin accounts</h2>
+            <p>These replaced accounts can be reactivated for 30 days after they were disabled.</p>
+            {replacedAdminsError && <p className="login-error" role="alert">{replacedAdminsError}</p>}
+            {loadingReplacedAdmins && <p>Loading accounts...</p>}
+            {!loadingReplacedAdmins && !replacedAdminsError && replacedAdmins.length === 0 && (
+              <p>No replaced BFAR Admin accounts are eligible for reactivation.</p>
+            )}
+            {replacedAdmins.map((account) => (
+              <div className="um-replaced-admin-row" key={account.id}>
+                <div>
+                  <strong>{account.firstName} {account.lastName}</strong>
+                  <span>{account.email}</span>
+                  <small>Reactivation expires {new Date(account.reactivationExpiresAt).toLocaleDateString()}</small>
+                </div>
+                <button className="uf-submit-btn" onClick={() => setPendingReactivation(account)}>
+                  Reactivate
+                </button>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+
+      {pendingReactivation && (
+        <ConfirmModal
+          title="Reactivate this BFAR Admin?"
+          message={`This will reactivate ${pendingReactivation.firstName} ${pendingReactivation.lastName}. Any currently active BFAR Admin account will be disabled and retained for possible reactivation for 30 days.`}
+          confirmLabel="Reactivate"
+          danger
+          onClose={() => setPendingReactivation(null)}
+          onConfirm={async () => {
+            await reactivateBfarAdmin(pendingReactivation.id);
+            setReplacedAdminsOpen(false);
+          }}
         />
       )}
 
