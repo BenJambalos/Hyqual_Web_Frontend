@@ -17,9 +17,21 @@ const timeFilters = [
 
 const iconByType = { signin: LogIn, export: FileText, account: UserPlus, device: Cpu };
 const actionLabels = {
+  account_created: "created an account",
+  account_updated: "updated an account",
   profile_updated: "edited a profile",
+  farm_created: "created a farm",
   farm_updated: "edited a farm",
+  pond_created: "created a pond",
   pond_updated: "edited a pond",
+  device_created: "added a device",
+  device_updated: "edited a device",
+  device_credentials_provisioned: "provisioned device credentials",
+  device_credentials_revoked: "revoked device credentials",
+  alert_created: "created an alert",
+  alert_updated: "edited an alert",
+  password_changed: "changed a password",
+  password_reset: "reset a password",
 };
 
 function getLogDate(log, now) {
