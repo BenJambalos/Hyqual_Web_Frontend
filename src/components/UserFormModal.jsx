@@ -43,7 +43,7 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
     setError("");
     setEmailError("");
     setPasswordError("");
-    if (!isValidEmail(form.email)) {
+    if (mode === "add" && !isValidEmail(form.email)) {
       setEmailError("Invalid email address.");
       return;
     }
@@ -61,8 +61,13 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
 
     setSaving(true);
     try {
-      const submittedForm = { ...form, email: form.email.trim(), phone };
-      if (mode === "edit" && !submittedForm.password) delete submittedForm.password;
+      const submittedForm = { ...form, phone };
+      if (mode === "add") {
+        submittedForm.email = form.email.trim();
+      } else {
+        delete submittedForm.email;
+        if (!submittedForm.password) delete submittedForm.password;
+      }
       await onSubmit(submittedForm);
       onClose();
     } catch (submitError) {
@@ -116,6 +121,7 @@ function UserFormModal({ mode, initialData, onClose, onSubmit, onArchiveClick })
             type="email"
             value={form.email}
             onChange={handleChange("email")}
+            readOnly={mode === "edit"}
             placeholder="Email address"
             aria-invalid={Boolean(emailError)}
             aria-describedby={emailError ? "user-email-error" : undefined}

@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -24,6 +26,40 @@ describe("UserFormModal email validation", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("Invalid email address.");
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("keeps an existing email read-only and omits it from edit submissions", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <UserFormModal
+        mode="edit"
+        initialData={{
+          firstName: "Ada",
+          lastName: "Lovelace",
+          middleName: "",
+          phone: "",
+          email: "ada@example.com",
+          password: "",
+          role: "BFAR Admin",
+          farmName: "",
+          street: "",
+          barangay: "",
+          city: "",
+        }}
+        onClose={vi.fn()}
+        onSubmit={onSubmit}
+      />
+    );
+
+    const emailInput = screen.getByPlaceholderText("Email address");
+    expect(emailInput).toHaveAttribute("readonly");
+    expect(emailInput).toHaveValue("ada@example.com");
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty("email");
   });
 });
 
