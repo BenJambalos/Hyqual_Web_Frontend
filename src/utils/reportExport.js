@@ -126,7 +126,7 @@ export function exportReportAsPDF(report) {
         startY: y + 10,
         head: [["Parameter", "Samples", report.averageLabel, "Min", "Max", "Status"]],
         body: pond.parameters.map((p) => [p.parameter, p.sampleCount, p.average, p.min, p.max, p.status.toUpperCase()]),
-        headStyles: { fillColor: [55, 65, 81] },
+        headStyles: { fillColor: [13, 92, 70] },
         styles: { fontSize: 8 },
         margin: { left: 14, right: 14 },
       });
@@ -145,7 +145,7 @@ export function exportReportAsPDF(report) {
             ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => getIncidentParameterValue(inc, column.key)),
             inc.description,
           ]),
-          headStyles: { fillColor: [220, 38, 38] },
+          headStyles: { fillColor: [13, 92, 70] },
           styles: { fontSize: 6 },
           margin: { left: 14, right: 14 },
         });
