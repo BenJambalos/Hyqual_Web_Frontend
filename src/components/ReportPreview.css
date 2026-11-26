@@ -169,6 +169,14 @@
   margin-bottom: 12px;
 }
 
+.report-incident-table-wrap {
+  overflow-x: auto;
+}
+
+.report-incident-table {
+  min-width: 720px;
+}
+
 .report-table thead tr {
   background: #374151;
 }

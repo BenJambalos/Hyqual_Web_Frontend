@@ -111,6 +111,7 @@ describe("report date periods", () => {
     expect(report.farms[0].ponds[0].incidents).toEqual([{
       timestamp: "November 3, 2026 8:00AM",
       parameter: "Water Temperature",
+      parameterKey: "temperature",
       value: "20.00 °C",
       description: "Water Temperature reading of 20.00 °C flagged critical.",
     }]);

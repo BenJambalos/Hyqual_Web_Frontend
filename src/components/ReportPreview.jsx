@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import logoIcon from "../assets/hyqual-logo-icon.png";
-import { getReportData } from "../utils/reportPreview";
+import {
+  getIncidentParameterValue,
+  getReportData,
+  REPORT_INCIDENT_PARAMETER_COLUMNS,
+} from "../utils/reportPreview";
 import { useReportReadings } from "../hooks/useReportReadings";
 import { useFarms } from "../hooks/useFarms";
 import "./ReportPreview.css";
@@ -166,26 +170,30 @@ function ReportPreview({ reportId, scope, onClose, farmData }) {
             {pond.incidents.length > 0 && (
               <>
                 <h3 className="report-section-heading">INCIDENT &amp; CRITICAL EVENT LOGS</h3>
-                <table className="report-table">
-                  <thead>
-                    <tr>
-                      <th>Time Stamp</th>
-                      <th>Parameter</th>
-                      <th>Value Logged</th>
-                      <th>Alert Description and Risk</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pond.incidents.map((inc, i) => (
-                      <tr key={i}>
-                        <td>{inc.timestamp}</td>
-                        <td>{inc.parameter}</td>
-                        <td>{inc.value}</td>
-                        <td>{inc.description}</td>
+                <div className="report-incident-table-wrap">
+                  <table className="report-table report-incident-table">
+                    <thead>
+                      <tr>
+                        <th>Time Stamp</th>
+                        {REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => (
+                          <th key={column.key}>{column.label}</th>
+                        ))}
+                        <th>Alert Description and Risk</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {pond.incidents.map((inc, i) => (
+                        <tr key={i}>
+                          <td>{inc.timestamp}</td>
+                          {REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => (
+                            <td key={column.key}>{getIncidentParameterValue(inc, column.key)}</td>
+                          ))}
+                          <td>{inc.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             )}
           </div>

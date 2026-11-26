@@ -14,6 +14,17 @@ const paramMeta = {
   salinity: { label: "Salinity", unit: "ppt", key: "salinity", apiKey: "salinity", thresholdKey: "sal" },
 };
 
+export const REPORT_INCIDENT_PARAMETER_COLUMNS = [
+  { key: "phLevel", label: "pH" },
+  { key: "dissolvedOxygen", label: "Dissolved Oxygen" },
+  { key: "temperature", label: "Temperature" },
+  { key: "salinity", label: "Salinity" },
+];
+
+export function getIncidentParameterValue(incident, parameterKey) {
+  return incident.parameterKey === parameterKey ? incident.value : "—";
+}
+
 function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
@@ -157,6 +168,7 @@ function buildPondReport(pond, liveHistory = [], aggregatePond, aggregateData) {
     incidents.push({
       timestamp: formatReportTimestamp(incident.recordedAt),
       parameter: meta.label,
+      parameterKey: meta.key,
       value,
       description: `${meta.label} reading of ${value} flagged ${status}.`,
     });

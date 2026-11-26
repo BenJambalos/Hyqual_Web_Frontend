@@ -3,6 +3,10 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import logoIcon from "../assets/hyqual-logo-icon.png?inline";
 import { logAuditEvent } from "./auditLog";
+import {
+  getIncidentParameterValue,
+  REPORT_INCIDENT_PARAMETER_COLUMNS,
+} from "./reportPreview";
 
 function getFarmComplianceRows(farm) {
   return farm.ponds.flatMap((pond) => pond.parameters.map((param) => ({
@@ -24,8 +28,10 @@ function getFarmIncidentRows(farm) {
     farm: farm.farmName,
     pond: pond.pondName,
     timestamp: inc.timestamp,
-    parameter: inc.parameter,
-    value: inc.value,
+    ...Object.fromEntries(REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => [
+      column.key,
+      getIncidentParameterValue(inc, column.key),
+    ])),
     description: inc.description,
   })));
 }
@@ -129,10 +135,18 @@ export function exportReportAsPDF(report) {
       if (pond.incidents.length > 0) {
         autoTable(doc, {
           startY: y,
-          head: [["Timestamp", "Parameter", "Value", "Description"]],
-          body: pond.incidents.map((inc) => [inc.timestamp, inc.parameter, inc.value, inc.description]),
+          head: [[
+            "Timestamp",
+            ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => column.label),
+            "Alert Description and Risk",
+          ]],
+          body: pond.incidents.map((inc) => [
+            inc.timestamp,
+            ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => getIncidentParameterValue(inc, column.key)),
+            inc.description,
+          ]),
           headStyles: { fillColor: [220, 38, 38] },
-          styles: { fontSize: 7 },
+          styles: { fontSize: 6 },
           margin: { left: 14, right: 14 },
         });
         y = doc.lastAutoTable.finalY + 5;
@@ -186,9 +200,21 @@ export function exportReportAsCSV(report) {
       if (incidentRows.length === 0) return;
 
       csv += `\nFARM,${escape(farm.farmName)}\n`;
-      csv += ["Farm", "Pond", "Timestamp", "Parameter", "Value", "Description"].map(escape).join(",") + "\n";
+      csv += [
+        "Farm",
+        "Pond",
+        "Timestamp",
+        ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => column.label),
+        "Alert Description and Risk",
+      ].map(escape).join(",") + "\n";
       incidentRows.forEach((r) => {
-        csv += [r.farm, r.pond, r.timestamp, r.parameter, r.value, r.description].map(escape).join(",") + "\n";
+        csv += [
+          r.farm,
+          r.pond,
+          r.timestamp,
+          ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => r[column.key]),
+          r.description,
+        ].map(escape).join(",") + "\n";
       });
     });
   }
@@ -236,9 +262,19 @@ export function exportReportAsXLSX(report) {
       farmGrid.push(
         [],
         ["INCIDENT & CRITICAL EVENT LOGS"],
-        ["Farm", "Pond", "Timestamp", "Parameter", "Value", "Description"],
+        [
+          "Farm",
+          "Pond",
+          "Timestamp",
+          ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => column.label),
+          "Alert Description and Risk",
+        ],
         ...incidentRows.map((r) => [
-          r.farm, r.pond, r.timestamp, r.parameter, r.value, r.description,
+          r.farm,
+          r.pond,
+          r.timestamp,
+          ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => r[column.key]),
+          r.description,
         ]),
       );
     }
