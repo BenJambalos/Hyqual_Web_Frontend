@@ -54,10 +54,16 @@ function formatGeneratedDate(date) {
   const hour = date.getHours();
   const hour12 = hour % 12 || 12;
   const minute = String(date.getMinutes()).padStart(2, "0");
-  const second = String(date.getSeconds()).padStart(2, "0");
   const meridiem = hour < 12 ? "AM" : "PM";
 
-  return `${dateLabel} ${hour12}:${minute}:${second}${meridiem}`;
+  return `${dateLabel} ${hour12}:${minute}${meridiem}`;
+}
+
+function formatReportTimestamp(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return formatGeneratedDate(date);
 }
 
 function formatDateRange(start, end) {
@@ -149,7 +155,7 @@ function buildPondReport(pond, liveHistory = [], aggregatePond, aggregateData) {
     const status = getParamStatus(meta.thresholdKey, incident.value);
     const value = formatValue(incident.value, meta.unit);
     incidents.push({
-      timestamp: incident.recordedAt.replace("T", " ").replace("Z", ""),
+      timestamp: formatReportTimestamp(incident.recordedAt),
       parameter: meta.label,
       value,
       description: `${meta.label} reading of ${value} flagged ${status}.`,
