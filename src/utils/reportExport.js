@@ -145,7 +145,7 @@ export function exportReportAsPDF(report) {
             ...REPORT_INCIDENT_PARAMETER_COLUMNS.map((column) => getIncidentParameterValue(inc, column.key)),
             inc.description,
           ]),
-          headStyles: { fillColor: [13, 92, 70] },
+          headStyles: { fillColor: [245, 158, 11], textColor: [17, 24, 39] },
           styles: { fontSize: 6 },
           margin: { left: 14, right: 14 },
         });

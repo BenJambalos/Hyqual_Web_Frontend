@@ -177,6 +177,14 @@
   min-width: 720px;
 }
 
+.report-incident-table thead tr {
+  background: #f59e0b;
+}
+
+.report-incident-table th {
+  color: #111827;
+}
+
 .report-table thead tr {
   background: #0d5c46;
 }
